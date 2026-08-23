@@ -37,7 +37,11 @@ export default function AdminPortal() {
   }, [isAdminHost]);
 
   const handleLogout = () => {
-    window.location.assign('/cdn-cgi/access/logout');
+    // Clear the Access application session without navigating to its managed
+    // logout screen, then return the user to the public website.
+    void fetch('/cdn-cgi/access/logout', { credentials: 'same-origin' })
+      .catch(() => undefined)
+      .finally(() => window.location.assign('https://pureshadeblinds.co.uk/'));
   };
 
   if (!isAdminHost) {
