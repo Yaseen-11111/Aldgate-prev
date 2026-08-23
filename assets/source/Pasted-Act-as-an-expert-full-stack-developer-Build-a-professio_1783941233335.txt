@@ -1,0 +1,32 @@
+Act as an expert full-stack developer. Build a professional, production-ready website for a premium blinds and shades business based on the Hillarys service model (where prices are hidden, and the basket gathers items to request an in-home measurement/quote appointment).
+
+### Tech Stack Options (Choose one combination to implement fully)
+- Option A: React frontend (with Tailwind CSS) and Node.js/Express backend.
+- Option B: Django backend utilizing HTML5/Tailwind and HTMX for dynamic asynchronous updates.
+
+### Design & Aesthetic (No Generic "Vibe" Slop)
+- Avoid generic bright blue/white or typical bootstrap themes. 
+- Use a sophisticated, architectural palette: Deep slate/charcoal (#1E293B) for primary headers/text, warm muted sand/stone (#F5F5F4) for backgrounds, and a refined brushed brass or dark forest green accent for primary CTAs.
+- High-contrast typography (clean sans-serif like Inter, plenty of intentional layout whitespace), minimalist product grids, and elegant, crisp text.
+
+### Core Features & Architecture
+
+1. Product Catalog:
+   - A minimalist grid layout displaying premium blinds and shades (Roller, Venetian, Roman, Shutter).
+   - Crucial: No pricing is displayed anywhere on the site. Product cards show Name, Materials, Fabric Options, and a clear "Add to Quote Request" button.
+   - Include a password-protected Admin View (accessible at `/admin`) with a clean form to easily add new fabric/style items to the catalog. Changes must save dynamically.
+
+2. "Quote Request" Basket (The Hillarys Model):
+   - A persistent side drawer or clean cart page that lists the styles the user has selected.
+   - Instead of a financial total, the basket prominently displays: "Items Selected for Consultation: X". It acts as a shortlist of inspiration for the installer.
+
+3. Streamlined Appointment Checkout Flow:
+   - When the user clicks "Book Free Home Appointment & Quote", they enter a seamless checkout path.
+   - Step 1 (Inspiration Summary): Displays the selected items from the basket. Includes an optional field for "Preliminary Window Measurements (Width x Drop in cm)" if they wish to provide them, alongside a clear message: "Windows come in all shapes and sizes. Don't worry if you don't have measurements—our advisor will professionally measure every window from scratch."
+   - Step 2 (Booking & Details): A clean form capturing Contact Details (Name, Phone, Email, Postcode) and a preferred Date/Time window.
+   - Submitting the form saves the complete order payload to the backend database (SQLite or JSON file storage) with an "Appointment Pending" status and triggers a premium "Appointment Confirmed" success screen.
+
+### Implementation Requirements
+- Provide 100% complete, functional code files. Do not use placeholders, "TODOs", or truncated logic blocks.
+- Ensure state persistence for the basket (using localStorage or session state) so page refreshes do not clear their selections.
+- The build pipeline must run locally with Node.js and pnpm out of the box.

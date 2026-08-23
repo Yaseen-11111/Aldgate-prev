@@ -1,0 +1,25 @@
+import { z } from 'zod';
+
+export const checkoutFormSchema = z.object({
+  name: z.string().min(2, 'Name is required'),
+  phone: z.string().min(5, 'Valid phone number is required'),
+  email: z.string().email('Valid email is required'),
+  postcode: z.string().min(3, 'Postcode is required'),
+  preferredDate: z.string().min(1, 'Please select a preferred date'),
+  preferredTimeWindow: z.string().min(1, 'Please select a time window'),
+  widthCm: z.union([z.number(), z.nan()]).optional(),
+  dropCm: z.union([z.number(), z.nan()]).optional(),
+});
+
+export type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
+
+export const checkoutFormDefaults: CheckoutFormValues = {
+  name: '',
+  phone: '',
+  email: '',
+  postcode: '',
+  preferredDate: '',
+  preferredTimeWindow: '',
+  widthCm: undefined,
+  dropCm: undefined,
+};

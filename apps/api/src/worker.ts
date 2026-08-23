@@ -1,0 +1,397 @@
+import {
+  AdminLoginBody,
+  AdminLoginResponse,
+  CreateProductBody,
+  CreateProductResponse,
+  CreateQuoteRequestBody,
+  CreateQuoteRequestResponse,
+  GetProductResponse,
+  GetQuoteRequestResponse,
+  GetQuoteRequestSummaryResponse,
+  ListProductsQueryParams,
+  ListProductsResponse,
+  ListQuoteRequestsResponse,
+  UpdateProductBody,
+  UpdateProductResponse,
+  UpdateQuoteRequestBody,
+  UpdateQuoteRequestResponse,
+} from "@workspace/api-zod";
+
+type D1Meta = { changes?: number; last_row_id?: number | string };
+type D1Result<Row> = { results?: Row[]; meta?: D1Meta };
+type D1Statement = {
+  bind(...values: unknown[]): D1Statement;
+  all<Row>(): Promise<D1Result<Row>>;
+  first<Row>(): Promise<Row | null>;
+  run(): Promise<D1Result<never>>;
+};
+
+type Env = {
+  DB: { prepare(query: string): D1Statement };
+  ASSETS: { fetch(request: Request): Promise<Response> };
+  ADMIN_PASSWORD: string;
+  SESSION_SECRET: string;
+};
+
+type ProductRow = {
+  id: number;
+  name: string;
+  category: string;
+  materials: string;
+  fabric_options: string;
+  description: string;
+  images: string;
+  created_at: string;
+};
+
+type QuoteRequestRow = {
+  id: number;
+  items: string;
+  width_cm: number | null;
+  drop_cm: number | null;
+  name: string;
+  phone: string;
+  email: string;
+  postcode: string;
+  preferred_date: string;
+  preferred_time_window: string;
+  status: "pending" | "contacted" | "completed";
+  created_at: string;
+};
+
+type GalleryItemRow = {
+  id: number;
+  image_src: string;
+  media: string;
+  description: string;
+  created_at: string;
+};
+
+type GalleryMedia = { src: string; type: "image" | "video" };
+
+const jsonHeaders = {
+  "content-type": "application/json; charset=utf-8",
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, content-type",
+  "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
+};
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: jsonHeaders });
+}
+
+function error(message: string, status: number): Response {
+  return json({ error: message }, status);
+}
+
+function productFromRow(row: ProductRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    materials: row.materials,
+    fabricOptions: JSON.parse(row.fabric_options) as string[],
+    description: row.description,
+    images: JSON.parse(row.images) as string[],
+    createdAt: new Date(row.created_at),
+  };
+}
+
+function quoteRequestFromRow(row: QuoteRequestRow) {
+  return {
+    id: row.id,
+    items: JSON.parse(row.items) as Array<{ productId: number; productName: string; category: string }>,
+    widthCm: row.width_cm,
+    dropCm: row.drop_cm,
+    name: row.name,
+    phone: row.phone,
+    email: row.email,
+    postcode: row.postcode,
+    preferredDate: new Date(row.preferred_date),
+    preferredTimeWindow: row.preferred_time_window,
+    status: row.status,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+function galleryItemFromRow(row: GalleryItemRow) {
+  return {
+    id: row.id,
+    media: JSON.parse(row.media) as GalleryMedia[],
+    description: row.description,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+function isGalleryMedia(value: unknown): value is GalleryMedia[] {
+  return Array.isArray(value) && value.length > 0 && value.every((item) =>
+    typeof item === "object" && item !== null &&
+    typeof (item as GalleryMedia).src === "string" && (item as GalleryMedia).src.trim().length > 0 &&
+    ((item as GalleryMedia).type === "image" || (item as GalleryMedia).type === "video"),
+  );
+}
+
+function base64UrlEncode(value: Uint8Array): string {
+  let binary = "";
+  for (const byte of value) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+
+function base64UrlDecode(value: string): Uint8Array {
+  const padded = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+}
+
+async function signingKey(secret: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+
+async function createAdminToken(secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const header = base64UrlEncode(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
+  const payload = base64UrlEncode(encoder.encode(JSON.stringify({ role: "admin", exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60 })));
+  const unsigned = `${header}.${payload}`;
+  const signature = await crypto.subtle.sign("HMAC", await signingKey(secret), encoder.encode(unsigned));
+  return `${unsigned}.${base64UrlEncode(new Uint8Array(signature))}`;
+}
+
+async function isAdminToken(token: string, secret: string): Promise<boolean> {
+  const [header, payload, signature, ...extra] = token.split(".");
+  if (!header || !payload || !signature || extra.length > 0) return false;
+  try {
+    const verified = await crypto.subtle.verify("HMAC", await signingKey(secret), base64UrlDecode(signature), new TextEncoder().encode(`${header}.${payload}`));
+    if (!verified) return false;
+    const claims = JSON.parse(new TextDecoder().decode(base64UrlDecode(payload))) as { role?: string; exp?: number };
+    return claims.role === "admin" && typeof claims.exp === "number" && claims.exp > Math.floor(Date.now() / 1000);
+  } catch {
+    return false;
+  }
+}
+
+async function requireAdmin(request: Request, env: Env): Promise<Response | null> {
+  const header = request.headers.get("authorization");
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
+  if (!token || !(await isAdminToken(token, env.SESSION_SECRET))) return error("Admin authentication required", 401);
+  return null;
+}
+
+async function body(request: Request): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
+  }
+}
+
+function validId(pathname: string, prefix: string): number | null {
+  const match = new RegExp(`^${prefix}/(\\d+)$`).exec(pathname);
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+async function handleApi(request: Request, env: Env): Promise<Response> {
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: jsonHeaders });
+
+  const url = new URL(request.url);
+  const { pathname } = url;
+
+  if (request.method === "GET" && pathname === "/api/healthz") return json({ status: "ok" });
+
+  if (request.method === "POST" && pathname === "/api/admin/login") {
+    const parsed = AdminLoginBody.safeParse(await body(request));
+    if (!parsed.success) return error(parsed.error.message, 400);
+    if (!env.ADMIN_PASSWORD || !env.SESSION_SECRET) return error("Worker secrets are not configured", 500);
+    if (parsed.data.password !== env.ADMIN_PASSWORD) return error("Invalid password", 401);
+    return json(AdminLoginResponse.parse({ token: await createAdminToken(env.SESSION_SECRET) }));
+  }
+
+  if (pathname === "/api/products" && request.method === "GET") {
+    const parsed = ListProductsQueryParams.safeParse({ category: url.searchParams.get("category") ?? undefined });
+    if (!parsed.success) return error(parsed.error.message, 400);
+    const statement = parsed.data.category
+      ? env.DB.prepare("SELECT * FROM products WHERE category = ? ORDER BY created_at DESC").bind(parsed.data.category)
+      : env.DB.prepare("SELECT * FROM products ORDER BY created_at DESC");
+    const result = await statement.all<ProductRow>();
+    return json(ListProductsResponse.parse((result.results ?? []).map(productFromRow)));
+  }
+
+  if (pathname === "/api/products" && request.method === "POST") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const parsed = CreateProductBody.safeParse(await body(request));
+    if (!parsed.success) return error(parsed.error.message, 400);
+    const product = parsed.data;
+    const inserted = await env.DB.prepare("INSERT INTO products (name, category, materials, fabric_options, description, images) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(product.name, product.category, product.materials, JSON.stringify(product.fabricOptions), product.description, JSON.stringify(product.images)).run();
+    const row = await env.DB.prepare("SELECT * FROM products WHERE id = ?").bind(inserted.meta?.last_row_id).first<ProductRow>();
+    return row ? json(CreateProductResponse.parse(productFromRow(row)), 201) : error("Product could not be created", 500);
+  }
+
+  const productId = validId(pathname, "/api/products");
+  if (productId !== null && request.method === "GET") {
+    const row = await env.DB.prepare("SELECT * FROM products WHERE id = ?").bind(productId).first<ProductRow>();
+    return row ? json(GetProductResponse.parse(productFromRow(row))) : error("Product not found", 404);
+  }
+  if (productId !== null && request.method === "PATCH") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const parsed = UpdateProductBody.safeParse(await body(request));
+    if (!parsed.success) return error(parsed.error.message, 400);
+    const fields: Array<[string, unknown]> = [
+      ["name", parsed.data.name], ["category", parsed.data.category], ["materials", parsed.data.materials],
+      ["fabric_options", parsed.data.fabricOptions === undefined ? undefined : JSON.stringify(parsed.data.fabricOptions)],
+      ["description", parsed.data.description], ["images", parsed.data.images === undefined ? undefined : JSON.stringify(parsed.data.images)],
+    ].filter((field): field is [string, unknown] => field[1] !== undefined);
+    if (fields.length === 0) return error("At least one field must be provided", 400);
+    const update = `UPDATE products SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;
+    const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), productId).run();
+    if (!result.meta?.changes) return error("Product not found", 404);
+    const row = await env.DB.prepare("SELECT * FROM products WHERE id = ?").bind(productId).first<ProductRow>();
+    return json(UpdateProductResponse.parse(productFromRow(row!)));
+  }
+  if (productId !== null && request.method === "DELETE") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const result = await env.DB.prepare("DELETE FROM products WHERE id = ?").bind(productId).run();
+    return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Product not found", 404);
+  }
+
+  if (pathname === "/api/gallery" && request.method === "GET") {
+    const result = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items ORDER BY sort_order ASC, id ASC").all<GalleryItemRow>();
+    return json((result.results ?? []).map(galleryItemFromRow));
+  }
+
+  if (pathname === "/api/gallery" && request.method === "POST") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const input = await body(request);
+    const media = input && typeof input === "object" ? (input as { media?: unknown }).media : undefined;
+    if (!isGalleryMedia(media)) {
+      return error("At least one image or video is required", 400);
+    }
+    const description = (input as { description?: unknown }).description;
+    if (description !== undefined && typeof description !== "string") return error("Description must be text", 400);
+    const inserted = await env.DB.prepare("INSERT INTO gallery_items (image_src, media, description, sort_order) VALUES (?, ?, ?, COALESCE((SELECT MAX(sort_order) + 1 FROM gallery_items), 0))")
+      .bind(media[0].src, JSON.stringify(media), description ?? "").run();
+    const row = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items WHERE id = ?").bind(inserted.meta?.last_row_id).first<GalleryItemRow>();
+    return row ? json(galleryItemFromRow(row), 201) : error("Gallery item could not be created", 500);
+  }
+
+  if (pathname === "/api/gallery/reorder" && request.method === "PATCH") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const input = await body(request);
+    const ids = input && typeof input === "object" ? (input as { ids?: unknown }).ids : undefined;
+    if (!Array.isArray(ids) || !ids.every((id) => typeof id === "number" && Number.isSafeInteger(id) && id > 0) || new Set(ids).size !== ids.length) {
+      return error("A complete ordered list of gallery item IDs is required", 400);
+    }
+    const current = await env.DB.prepare("SELECT id FROM gallery_items").all<{ id: number }>();
+    if (ids.length !== (current.results ?? []).length || ids.some((id) => !(current.results ?? []).some((item) => item.id === id))) {
+      return error("Gallery item IDs did not match the current gallery", 400);
+    }
+    if (ids.length > 0) {
+      const cases = ids.map((id, index) => `WHEN ${id} THEN ${index}`).join(" ");
+      await env.DB.prepare(`UPDATE gallery_items SET sort_order = CASE id ${cases} END WHERE id IN (${ids.join(",")})`).run();
+    }
+    const result = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items ORDER BY sort_order ASC, id ASC").all<GalleryItemRow>();
+    return json((result.results ?? []).map(galleryItemFromRow));
+  }
+
+  const galleryId = validId(pathname, "/api/gallery");
+  if (galleryId !== null && request.method === "PATCH") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const input = await body(request);
+    if (!input || typeof input !== "object") return error("Invalid gallery item", 400);
+    const media = (input as { media?: unknown }).media;
+    const description = (input as { description?: unknown }).description;
+    if ((media !== undefined && !isGalleryMedia(media)) || (description !== undefined && typeof description !== "string")) return error("Invalid gallery item", 400);
+    const fields: Array<[string, string]> = [];
+    if (isGalleryMedia(media)) {
+      fields.push(["image_src", media[0].src], ["media", JSON.stringify(media)]);
+    }
+    if (typeof description === "string") fields.push(["description", description]);
+    if (fields.length === 0) return error("At least one field must be provided", 400);
+    const update = `UPDATE gallery_items SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;
+    const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), galleryId).run();
+    if (!result.meta?.changes) return error("Gallery item not found", 404);
+    const row = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items WHERE id = ?").bind(galleryId).first<GalleryItemRow>();
+    return json(galleryItemFromRow(row!));
+  }
+  if (galleryId !== null && request.method === "DELETE") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const result = await env.DB.prepare("DELETE FROM gallery_items WHERE id = ?").bind(galleryId).run();
+    return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Gallery item not found", 404);
+  }
+
+  if (pathname === "/api/quote-requests" && request.method === "POST") {
+    const parsed = CreateQuoteRequestBody.safeParse(await body(request));
+    if (!parsed.success) return error(parsed.error.message, 400);
+    const input = parsed.data;
+    const inserted = await env.DB.prepare("INSERT INTO quote_requests (items, width_cm, drop_cm, name, phone, email, postcode, preferred_date, preferred_time_window) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(JSON.stringify(input.items), input.widthCm ?? null, input.dropCm ?? null, input.name, input.phone, input.email, input.postcode, input.preferredDate.toISOString().slice(0, 10), input.preferredTimeWindow).run();
+    const row = await env.DB.prepare("SELECT * FROM quote_requests WHERE id = ?").bind(inserted.meta?.last_row_id).first<QuoteRequestRow>();
+    return row ? json(CreateQuoteRequestResponse.parse(quoteRequestFromRow(row)), 201) : error("Quote request could not be created", 500);
+  }
+
+  if (pathname === "/api/quote-requests" && request.method === "GET") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const result = await env.DB.prepare("SELECT * FROM quote_requests ORDER BY created_at DESC").all<QuoteRequestRow>();
+    return json(ListQuoteRequestsResponse.parse((result.results ?? []).map(quoteRequestFromRow)));
+  }
+
+  if (pathname === "/api/quote-requests/summary" && request.method === "GET") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const summary = await env.DB.prepare("SELECT SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS totalPending, SUM(CASE WHEN created_at >= datetime('now', '-7 days') THEN 1 ELSE 0 END) AS totalThisWeek, COALESCE(SUM(json_array_length(items)), 0) AS totalItemsRequested FROM quote_requests")
+      .first<{ totalPending: number | null; totalThisWeek: number | null; totalItemsRequested: number }>();
+    return json(GetQuoteRequestSummaryResponse.parse({ totalPending: summary?.totalPending ?? 0, totalThisWeek: summary?.totalThisWeek ?? 0, totalItemsRequested: summary?.totalItemsRequested ?? 0 }));
+  }
+
+  const quoteId = validId(pathname, "/api/quote-requests");
+  if (quoteId !== null && request.method === "GET") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const row = await env.DB.prepare("SELECT * FROM quote_requests WHERE id = ?").bind(quoteId).first<QuoteRequestRow>();
+    return row ? json(GetQuoteRequestResponse.parse(quoteRequestFromRow(row))) : error("Quote request not found", 404);
+  }
+  if (quoteId !== null && request.method === "PATCH") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const parsed = UpdateQuoteRequestBody.safeParse(await body(request));
+    if (!parsed.success) return error(parsed.error.message, 400);
+    const fields: Array<[string, unknown]> = [
+      ["name", parsed.data.name], ["phone", parsed.data.phone], ["email", parsed.data.email], ["postcode", parsed.data.postcode],
+      ["preferred_date", parsed.data.preferredDate === undefined ? undefined : parsed.data.preferredDate.toISOString().slice(0, 10)],
+      ["preferred_time_window", parsed.data.preferredTimeWindow], ["width_cm", parsed.data.widthCm], ["drop_cm", parsed.data.dropCm], ["status", parsed.data.status],
+    ].filter((field): field is [string, unknown] => field[1] !== undefined);
+    if (fields.length === 0) return error("At least one field must be provided", 400);
+    const update = `UPDATE quote_requests SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;
+    const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), quoteId).run();
+    if (!result.meta?.changes) return error("Quote request not found", 404);
+    const row = await env.DB.prepare("SELECT * FROM quote_requests WHERE id = ?").bind(quoteId).first<QuoteRequestRow>();
+    return json(UpdateQuoteRequestResponse.parse(quoteRequestFromRow(row!)));
+  }
+  if (quoteId !== null && request.method === "DELETE") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const result = await env.DB.prepare("DELETE FROM quote_requests WHERE id = ?").bind(quoteId).run();
+    return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Quote request not found", 404);
+  }
+
+  return error("Not found", 404);
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      return new URL(request.url).pathname.startsWith("/api/") ? await handleApi(request, env) : env.ASSETS.fetch(request);
+    } catch (exception) {
+      console.error(exception);
+      return error("Internal server error", 500);
+    }
+  },
+};

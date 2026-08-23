@@ -1,0 +1,602 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification for Aldergate Blinds & Shades
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: products
+    description: Catalog operations
+  - name: quote-requests
+    description: Quote / appointment request operations
+  - name: admin
+    description: Admin authentication
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List catalog products
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProductCategory"
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a catalog product (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a single product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a catalog product (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a catalog product (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Authenticate as admin using the shared admin password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+        "401":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /quote-requests:
+    get:
+      operationId: listQuoteRequests
+      tags: [quote-requests]
+      summary: List all submitted quote/appointment requests (admin only)
+      responses:
+        "200":
+          description: List of quote requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuoteRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createQuoteRequest
+      tags: [quote-requests]
+      summary: Submit a quote / home appointment request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteRequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequest"
+
+  /quote-requests/{id}:
+    get:
+      operationId: getQuoteRequest
+      tags: [quote-requests]
+      summary: Get a single quote/appointment request (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quote request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateQuoteRequest
+      tags: [quote-requests]
+      summary: Update a quote/appointment request (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteRequestUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequest"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteQuoteRequest
+      tags: [quote-requests]
+      summary: Delete a quote/appointment request (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /quote-requests/summary:
+    get:
+      operationId: getQuoteRequestSummary
+      tags: [quote-requests]
+      summary: Aggregate stats for submitted quote requests (admin only)
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteRequestSummary"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    ProductCategory:
+      type: string
+      enum: [roller, venetian, roman, shutter]
+
+    Product:
+      type: object
+      required:
+        - id
+        - name
+        - category
+        - materials
+        - fabricOptions
+        - description
+        - images
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        category:
+          $ref: "#/components/schemas/ProductCategory"
+        materials:
+          type: string
+        fabricOptions:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductInput:
+      type: object
+      required:
+        - name
+        - category
+        - materials
+        - fabricOptions
+        - description
+        - images
+      properties:
+        name:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/ProductCategory"
+        materials:
+          type: string
+          minLength: 1
+        fabricOptions:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+          minItems: 1
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/ProductCategory"
+        materials:
+          type: string
+          minLength: 1
+        fabricOptions:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+          minItems: 1
+
+    AdminLoginInput:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          minLength: 1
+
+    AdminSession:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+
+    QuoteItem:
+      type: object
+      required:
+        - productId
+        - productName
+        - category
+      properties:
+        productId:
+          type: integer
+        productName:
+          type: string
+        category:
+          $ref: "#/components/schemas/ProductCategory"
+
+    QuoteRequestInput:
+      type: object
+      required:
+        - items
+        - name
+        - phone
+        - email
+        - postcode
+        - preferredDate
+        - preferredTimeWindow
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuoteItem"
+        widthCm:
+          type: ["number", "null"]
+        dropCm:
+          type: ["number", "null"]
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 1
+        postcode:
+          type: string
+          minLength: 1
+        preferredDate:
+          type: string
+          format: date
+        preferredTimeWindow:
+          type: string
+          minLength: 1
+
+    QuoteRequest:
+      type: object
+      required:
+        - id
+        - items
+        - widthCm
+        - dropCm
+        - name
+        - phone
+        - email
+        - postcode
+        - preferredDate
+        - preferredTimeWindow
+        - status
+        - createdAt
+      properties:
+        id:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuoteItem"
+        widthCm:
+          type: ["number", "null"]
+        dropCm:
+          type: ["number", "null"]
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        postcode:
+          type: string
+        preferredDate:
+          type: string
+          format: date
+        preferredTimeWindow:
+          type: string
+        status:
+          type: string
+          enum: [pending, contacted, completed]
+        createdAt:
+          type: string
+          format: date-time
+
+    QuoteRequestUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 1
+        postcode:
+          type: string
+          minLength: 1
+        preferredDate:
+          type: string
+          format: date
+        preferredTimeWindow:
+          type: string
+          minLength: 1
+        widthCm:
+          type: ["number", "null"]
+        dropCm:
+          type: ["number", "null"]
+        status:
+          type: string
+          enum: [pending, contacted, completed]
+
+    QuoteRequestSummary:
+      type: object
+      required:
+        - totalPending
+        - totalThisWeek
+        - totalItemsRequested
+      properties:
+        totalPending:
+          type: integer
+        totalThisWeek:
+          type: integer
+        totalItemsRequested:
+          type: integer
