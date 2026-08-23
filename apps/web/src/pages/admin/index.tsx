@@ -23,7 +23,13 @@ export default function AdminPortal() {
     if (!isAdminHost) return;
     void fetch('/api/admin/me', { credentials: 'same-origin' })
       .then(async (response) => {
-        if (!response.ok) throw new Error('Your Cloudflare Access session could not be verified.');
+        if (!response.ok) {
+          const responseBody = await response.json().catch(() => null) as { error?: unknown } | null;
+          const message = typeof responseBody?.error === 'string'
+            ? responseBody.error
+            : 'Your Cloudflare Access session could not be verified.';
+          throw new Error(message);
+        }
         return response.json() as Promise<{ email: string }>;
       })
       .then((identity) => setEmail(identity.email))

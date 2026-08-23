@@ -165,6 +165,15 @@ function parseJwtPart<T>(value: string): T | null {
   }
 }
 
+function cookieValue(request: Request, name: string): string | null {
+  const prefix = `${name}=`;
+  for (const part of request.headers.get("cookie")?.split(";") ?? []) {
+    const value = part.trim();
+    if (value.startsWith(prefix)) return value.slice(prefix.length);
+  }
+  return null;
+}
+
 function accessTeamDomain(env: Env): string | null {
   const domain = env.CF_ACCESS_TEAM_DOMAIN?.trim().toLowerCase();
   return domain && /^[a-z0-9-]+\.cloudflareaccess\.com$/.test(domain) ? domain : null;
@@ -189,7 +198,10 @@ async function accessJwks(env: Env): Promise<AccessJwk[] | null> {
 
 /** Validates the signed Cloudflare Access assertion injected by the Access proxy. */
 async function accessIdentity(request: Request, env: Env): Promise<AccessIdentity | null> {
-  const token = request.headers.get("cf-access-jwt-assertion");
+  // Access sends the signed header to origins. Browser requests also carry the
+  // signed session token as this HttpOnly cookie, which is a safe fallback when
+  // a Worker asset router does not forward the assertion header.
+  const token = request.headers.get("cf-access-jwt-assertion") ?? cookieValue(request, "CF_Authorization");
   const audience = env.CF_ACCESS_AUD?.trim();
   const domain = accessTeamDomain(env);
   if (!token || !audience || !domain) return null;
