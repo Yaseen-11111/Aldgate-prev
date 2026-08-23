@@ -3,16 +3,27 @@ import { useQuoteStore } from '@/store';
 import { Menu, X, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+const adminHost = 'admin.pureshadeblinds.co.uk';
+
 export function Navbar() {
   const [location] = useLocation();
   const items = useQuoteStore((state) => state.items);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hostname !== adminHost) return;
+
+    void fetch('/api/admin/me', { credentials: 'same-origin' })
+      .then((response) => setIsAdmin(response.ok))
+      .catch(() => setIsAdmin(false));
   }, []);
 
   const closeMenu = () => setMobileMenuOpen(false);
@@ -48,6 +59,11 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Link href="/admin" className="hidden sm:inline-flex text-sm font-medium tracking-wide text-foreground/80 hover:text-accent transition-colors" onClick={closeMenu}>
+                Dashboard
+              </Link>
+            )}
             <Link href="/quote" className="group flex items-center gap-2" onClick={closeMenu}>
               <span className="text-sm font-medium tracking-wide hidden sm:inline-block group-hover:text-accent transition-colors">
                 Consultation
@@ -87,6 +103,11 @@ export function Navbar() {
             <Link href="/quote" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
               Your Consultation ({items.length}) <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </Link>
+            {isAdmin && (
+              <Link href="/admin" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
+                Dashboard <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </Link>
+            )}
             <a href="https://admin.pureshadeblinds.co.uk/admin" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
               Admin Login <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </a>
