@@ -142,6 +142,10 @@ function base64UrlDecode(value: string): Uint8Array {
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
 }
 
+function toBufferSource(value: Uint8Array): Uint8Array<ArrayBuffer> {
+  return Uint8Array.from(value);
+}
+
 async function signingKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
@@ -159,7 +163,7 @@ async function isAdminToken(token: string, secret: string): Promise<boolean> {
   const [header, payload, signature, ...extra] = token.split(".");
   if (!header || !payload || !signature || extra.length > 0) return false;
   try {
-    const verified = await crypto.subtle.verify("HMAC", await signingKey(secret), base64UrlDecode(signature), new TextEncoder().encode(`${header}.${payload}`));
+    const verified = await crypto.subtle.verify("HMAC", await signingKey(secret), toBufferSource(base64UrlDecode(signature)), new TextEncoder().encode(`${header}.${payload}`));
     if (!verified) return false;
     const claims = JSON.parse(new TextDecoder().decode(base64UrlDecode(payload))) as { role?: string; exp?: number };
     return claims.role === "admin" && typeof claims.exp === "number" && claims.exp > Math.floor(Date.now() / 1000);
@@ -238,11 +242,11 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     if (forbidden) return forbidden;
     const parsed = UpdateProductBody.safeParse(await body(request));
     if (!parsed.success) return error(parsed.error.message, 400);
-    const fields: Array<[string, unknown]> = [
+    const fields = [
       ["name", parsed.data.name], ["category", parsed.data.category], ["materials", parsed.data.materials],
       ["fabric_options", parsed.data.fabricOptions === undefined ? undefined : JSON.stringify(parsed.data.fabricOptions)],
       ["description", parsed.data.description], ["images", parsed.data.images === undefined ? undefined : JSON.stringify(parsed.data.images)],
-    ].filter((field): field is [string, unknown] => field[1] !== undefined);
+    ].flatMap(([field, value]) => value === undefined ? [] : [[field, value] as [string, unknown]]);
     if (fields.length === 0) return error("At least one field must be provided", 400);
     const update = `UPDATE products SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;
     const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), productId).run();
@@ -363,11 +367,11 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     if (forbidden) return forbidden;
     const parsed = UpdateQuoteRequestBody.safeParse(await body(request));
     if (!parsed.success) return error(parsed.error.message, 400);
-    const fields: Array<[string, unknown]> = [
+    const fields = [
       ["name", parsed.data.name], ["phone", parsed.data.phone], ["email", parsed.data.email], ["postcode", parsed.data.postcode],
       ["preferred_date", parsed.data.preferredDate === undefined ? undefined : parsed.data.preferredDate.toISOString().slice(0, 10)],
       ["preferred_time_window", parsed.data.preferredTimeWindow], ["width_cm", parsed.data.widthCm], ["drop_cm", parsed.data.dropCm], ["status", parsed.data.status],
-    ].filter((field): field is [string, unknown] => field[1] !== undefined);
+    ].flatMap(([field, value]) => value === undefined ? [] : [[field, value] as [string, unknown]]);
     if (fields.length === 0) return error("At least one field must be provided", 400);
     const update = `UPDATE quote_requests SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;
     const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), quoteId).run();
