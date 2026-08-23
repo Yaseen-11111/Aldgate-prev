@@ -245,9 +245,8 @@ async function accessIdentity(request: Request, env: Env): Promise<AccessIdentit
 }
 
 async function requireAdmin(request: Request, env: Env): Promise<Response | null> {
-  if (!env.CF_ACCESS_AUD || !accessTeamDomain(env)) {
-    return error("Cloudflare Access is not configured", 503);
-  }
+  if (!env.CF_ACCESS_AUD?.trim()) return error("Worker secret CF_ACCESS_AUD is missing from the active deployment", 503);
+  if (!accessTeamDomain(env)) return error("Worker variable CF_ACCESS_TEAM_DOMAIN is missing or invalid in the active deployment", 503);
   if (!(await accessIdentity(request, env))) return error("Admin authentication required", 401);
   return null;
 }
