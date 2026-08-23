@@ -4,8 +4,10 @@ import { DashboardStats } from './dashboard-stats';
 import { ProductManager } from './product-manager';
 import { QuoteRequestsList } from './quote-requests-list';
 import { GalleryManager } from './gallery-manager';
+import { AppointmentsCalendar } from './appointments-calendar';
+import { ActivityLog } from './activity-log';
 
-type AdminView = 'dashboard' | 'gallery' | 'requests';
+type AdminView = 'dashboard' | 'gallery' | 'requests' | 'calendar' | 'activity';
 
 const adminHost = 'admin.pureshadeblinds.co.uk';
 
@@ -91,6 +93,18 @@ export default function AdminPortal() {
             >
               Gallery
             </button>
+            <button
+              onClick={() => setView('calendar')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${view === 'calendar' ? 'bg-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setView('activity')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${view === 'activity' ? 'bg-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Activity
+            </button>
           </div>
           <button
             onClick={handleLogout}
@@ -112,6 +126,10 @@ export default function AdminPortal() {
         </div>
       ) : view === 'gallery' ? (
         <GalleryManager />
+      ) : view === 'calendar' ? (
+        <AppointmentsCalendar />
+      ) : view === 'activity' ? (
+        <ActivityLog />
       ) : (
         <QuoteRequestsList />
       )}

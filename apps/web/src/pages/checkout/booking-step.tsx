@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -13,6 +15,25 @@ interface BookingStepProps {
 
 /** Step 2: contact details and preferred appointment window. */
 export function BookingStep({ form, onBack, isSubmitting }: BookingStepProps) {
+  const preferredDate = form.watch('preferredDate');
+  const preferredTimeWindow = form.watch('preferredTimeWindow');
+  const availability = useQuery({
+    queryKey: ['appointment-availability', preferredDate],
+    enabled: /^\d{4}-\d{2}-\d{2}$/.test(preferredDate),
+    queryFn: async () => {
+      const response = await fetch(`/api/appointment-availability?date=${encodeURIComponent(preferredDate)}`);
+      if (!response.ok) throw new Error('Unable to check appointment availability.');
+      return response.json() as Promise<{ unavailableTimeWindows: string[] }>;
+    },
+  });
+  const unavailableTimeWindows = availability.data?.unavailableTimeWindows ?? [];
+
+  useEffect(() => {
+    if (preferredTimeWindow && unavailableTimeWindows.includes(preferredTimeWindow)) {
+      form.setValue('preferredTimeWindow', '');
+    }
+  }, [form, preferredTimeWindow, unavailableTimeWindows]);
+
   return (
     <div className="animate-in fade-in slide-in-from-right-8 duration-500">
       <h1 className="text-4xl font-serif mb-4">Booking &amp; Details</h1>
@@ -94,18 +115,19 @@ export function BookingStep({ form, onBack, isSubmitting }: BookingStepProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Preferred Time Window</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a time" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="Morning (9am - 12pm)">Morning (9am - 12pm)</SelectItem>
-                  <SelectItem value="Afternoon (12pm - 4pm)">Afternoon (12pm - 4pm)</SelectItem>
-                  <SelectItem value="Evening (4pm - 7pm)">Evening (4pm - 7pm)</SelectItem>
+                  <SelectItem value="Morning (9am - 12pm)" disabled={unavailableTimeWindows.includes('Morning (9am - 12pm)')}>Morning (9am - 12pm){unavailableTimeWindows.includes('Morning (9am - 12pm)') ? ' — unavailable' : ''}</SelectItem>
+                  <SelectItem value="Afternoon (12pm - 4pm)" disabled={unavailableTimeWindows.includes('Afternoon (12pm - 4pm)')}>Afternoon (12pm - 4pm){unavailableTimeWindows.includes('Afternoon (12pm - 4pm)') ? ' — unavailable' : ''}</SelectItem>
+                  <SelectItem value="Evening (4pm - 7pm)" disabled={unavailableTimeWindows.includes('Evening (4pm - 7pm)')}>Evening (4pm - 7pm){unavailableTimeWindows.includes('Evening (4pm - 7pm)') ? ' — unavailable' : ''}</SelectItem>
                 </SelectContent>
               </Select>
+              {availability.isFetching && <FormDescription>Checking available times…</FormDescription>}
               <FormMessage />
             </FormItem>
           )}

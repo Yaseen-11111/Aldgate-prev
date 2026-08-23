@@ -15,6 +15,7 @@ import { EmptyShortlist } from './empty-shortlist';
 export default function Checkout() {
   const { items, clear } = useQuoteStore();
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const createRequest = useCreateQuoteRequest();
 
   const form = useForm<CheckoutFormValues>({
@@ -23,6 +24,7 @@ export default function Checkout() {
   });
 
   const onSubmit = (data: CheckoutFormValues) => {
+    setSubmissionError(null);
     createRequest.mutate({
       data: {
         items,
@@ -39,6 +41,9 @@ export default function Checkout() {
       onSuccess: () => {
         setStep(3);
         clear();
+      },
+      onError: (error) => {
+        setSubmissionError(error instanceof Error ? error.message : 'Unable to confirm your appointment. Please try again.');
       },
     });
   };
@@ -61,7 +66,10 @@ export default function Checkout() {
             <InspirationStep form={form} items={items} onContinue={() => setStep(2)} />
           )}
           {step === 2 && (
-            <BookingStep form={form} onBack={() => setStep(1)} isSubmitting={createRequest.isPending} />
+            <>
+              <BookingStep form={form} onBack={() => setStep(1)} isSubmitting={createRequest.isPending} />
+              {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
+            </>
           )}
         </form>
       </Form>

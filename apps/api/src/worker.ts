@@ -69,6 +69,17 @@ type GalleryItemRow = {
 
 type GalleryMedia = { src: string; type: "image" | "video" };
 
+type AuditEventRow = {
+  id: number;
+  actor_email: string;
+  action: string;
+  target_type: string;
+  target_id: number | null;
+  created_at: string;
+};
+
+const appointmentTimeWindows = ["Morning (9am - 12pm)", "Afternoon (12pm - 4pm)", "Evening (4pm - 7pm)"] as const;
+
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 };
@@ -251,6 +262,18 @@ async function requireAdmin(request: Request, env: Env): Promise<Response | null
   return null;
 }
 
+async function recordAuditEvent(request: Request, env: Env, action: string, targetType: string, targetId: number | null): Promise<void> {
+  const actor = await accessIdentity(request, env);
+  if (!actor) return;
+  try {
+    await env.DB.prepare("INSERT INTO admin_audit_events (actor_email, action, target_type, target_id) VALUES (?, ?, ?, ?)")
+      .bind(actor.email, action, targetType, targetId).run();
+  } catch (exception) {
+    // Do not break an admin change if a deployment reaches this code before its D1 migration.
+    console.error("Could not write admin audit event", exception);
+  }
+}
+
 async function body(request: Request): Promise<unknown> {
   try {
     return await request.json();
@@ -282,6 +305,21 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return identity ? json({ email: identity.email }) : error("Admin authentication required", 401);
   }
 
+  if (request.method === "GET" && pathname === "/api/admin/audit-events") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const result = await env.DB.prepare("SELECT id, actor_email, action, target_type, target_id, created_at FROM admin_audit_events ORDER BY id DESC LIMIT 100")
+      .all<AuditEventRow>();
+    return json((result.results ?? []).map((event) => ({
+      id: event.id,
+      actorEmail: event.actor_email,
+      action: event.action,
+      targetType: event.target_type,
+      targetId: event.target_id,
+      createdAt: event.created_at,
+    })));
+  }
+
   if (pathname === "/api/products" && request.method === "GET") {
     const parsed = ListProductsQueryParams.safeParse({ category: url.searchParams.get("category") ?? undefined });
     if (!parsed.success) return error(parsed.error.message, 400);
@@ -301,6 +339,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const inserted = await env.DB.prepare("INSERT INTO products (name, category, materials, fabric_options, description, images) VALUES (?, ?, ?, ?, ?, ?)")
       .bind(product.name, product.category, product.materials, JSON.stringify(product.fabricOptions), product.description, JSON.stringify(product.images)).run();
     const row = await env.DB.prepare("SELECT * FROM products WHERE id = ?").bind(inserted.meta?.last_row_id).first<ProductRow>();
+    await recordAuditEvent(request, env, "created", "product", row?.id ?? null);
     return row ? json(CreateProductResponse.parse(productFromRow(row)), 201) : error("Product could not be created", 500);
   }
 
@@ -324,12 +363,14 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), productId).run();
     if (!result.meta?.changes) return error("Product not found", 404);
     const row = await env.DB.prepare("SELECT * FROM products WHERE id = ?").bind(productId).first<ProductRow>();
+    await recordAuditEvent(request, env, "updated", "product", productId);
     return json(UpdateProductResponse.parse(productFromRow(row!)));
   }
   if (productId !== null && request.method === "DELETE") {
     const forbidden = await requireAdmin(request, env);
     if (forbidden) return forbidden;
     const result = await env.DB.prepare("DELETE FROM products WHERE id = ?").bind(productId).run();
+    if (result.meta?.changes) await recordAuditEvent(request, env, "deleted", "product", productId);
     return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Product not found", 404);
   }
 
@@ -351,6 +392,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const inserted = await env.DB.prepare("INSERT INTO gallery_items (image_src, media, description, sort_order) VALUES (?, ?, ?, COALESCE((SELECT MAX(sort_order) + 1 FROM gallery_items), 0))")
       .bind(media[0].src, JSON.stringify(media), description ?? "").run();
     const row = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items WHERE id = ?").bind(inserted.meta?.last_row_id).first<GalleryItemRow>();
+    await recordAuditEvent(request, env, "created", "gallery item", row?.id ?? null);
     return row ? json(galleryItemFromRow(row), 201) : error("Gallery item could not be created", 500);
   }
 
@@ -369,6 +411,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     if (ids.length > 0) {
       const cases = ids.map((id, index) => `WHEN ${id} THEN ${index}`).join(" ");
       await env.DB.prepare(`UPDATE gallery_items SET sort_order = CASE id ${cases} END WHERE id IN (${ids.join(",")})`).run();
+      await recordAuditEvent(request, env, "reordered", "gallery", null);
     }
     const result = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items ORDER BY sort_order ASC, id ASC").all<GalleryItemRow>();
     return json((result.results ?? []).map(galleryItemFromRow));
@@ -393,12 +436,14 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), galleryId).run();
     if (!result.meta?.changes) return error("Gallery item not found", 404);
     const row = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items WHERE id = ?").bind(galleryId).first<GalleryItemRow>();
+    await recordAuditEvent(request, env, "updated", "gallery item", galleryId);
     return json(galleryItemFromRow(row!));
   }
   if (galleryId !== null && request.method === "DELETE") {
     const forbidden = await requireAdmin(request, env);
     if (forbidden) return forbidden;
     const result = await env.DB.prepare("DELETE FROM gallery_items WHERE id = ?").bind(galleryId).run();
+    if (result.meta?.changes) await recordAuditEvent(request, env, "deleted", "gallery item", galleryId);
     return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Gallery item not found", 404);
   }
 
@@ -406,10 +451,28 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const parsed = CreateQuoteRequestBody.safeParse(await body(request));
     if (!parsed.success) return error(parsed.error.message, 400);
     const input = parsed.data;
+    if (!appointmentTimeWindows.includes(input.preferredTimeWindow as (typeof appointmentTimeWindows)[number])) {
+      return error("Select a valid appointment time window", 400);
+    }
+    const date = input.preferredDate.toISOString().slice(0, 10);
+    const availability = await env.DB.prepare("SELECT id FROM quote_requests WHERE preferred_date = ? AND preferred_time_window = ? AND status != 'completed' LIMIT 1")
+      .bind(date, input.preferredTimeWindow).first<{ id: number }>();
+    if (availability) return error("That appointment slot has just been taken. Please choose another time.", 409);
     const inserted = await env.DB.prepare("INSERT INTO quote_requests (items, width_cm, drop_cm, name, phone, email, postcode, preferred_date, preferred_time_window) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(JSON.stringify(input.items), input.widthCm ?? null, input.dropCm ?? null, input.name, input.phone, input.email, input.postcode, input.preferredDate.toISOString().slice(0, 10), input.preferredTimeWindow).run();
+      .bind(JSON.stringify(input.items), input.widthCm ?? null, input.dropCm ?? null, input.name, input.phone, input.email, input.postcode, date, input.preferredTimeWindow).run();
     const row = await env.DB.prepare("SELECT * FROM quote_requests WHERE id = ?").bind(inserted.meta?.last_row_id).first<QuoteRequestRow>();
     return row ? json(CreateQuoteRequestResponse.parse(quoteRequestFromRow(row)), 201) : error("Quote request could not be created", 500);
+  }
+
+  if (pathname === "/api/appointment-availability" && request.method === "GET") {
+    const date = url.searchParams.get("date");
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return error("A valid appointment date is required", 400);
+    const result = await env.DB.prepare("SELECT preferred_time_window FROM quote_requests WHERE preferred_date = ? AND status != 'completed'")
+      .bind(date).all<{ preferred_time_window: string }>();
+    const unavailableTimeWindows = (result.results ?? [])
+      .map((row) => row.preferred_time_window)
+      .filter((value): value is (typeof appointmentTimeWindows)[number] => appointmentTimeWindows.includes(value as (typeof appointmentTimeWindows)[number]));
+    return json({ date, unavailableTimeWindows });
   }
 
   if (pathname === "/api/quote-requests" && request.method === "GET") {
@@ -449,12 +512,14 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), quoteId).run();
     if (!result.meta?.changes) return error("Quote request not found", 404);
     const row = await env.DB.prepare("SELECT * FROM quote_requests WHERE id = ?").bind(quoteId).first<QuoteRequestRow>();
+    await recordAuditEvent(request, env, "updated", "consultation", quoteId);
     return json(UpdateQuoteRequestResponse.parse(quoteRequestFromRow(row!)));
   }
   if (quoteId !== null && request.method === "DELETE") {
     const forbidden = await requireAdmin(request, env);
     if (forbidden) return forbidden;
     const result = await env.DB.prepare("DELETE FROM quote_requests WHERE id = ?").bind(quoteId).run();
+    if (result.meta?.changes) await recordAuditEvent(request, env, "deleted", "consultation", quoteId);
     return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Quote request not found", 404);
   }
 
