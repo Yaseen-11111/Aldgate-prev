@@ -8,6 +8,9 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
+  "vars": {
+    "CF_ACCESS_TEAM_DOMAIN": "plain-limit-d106.cloudflareaccess.com"
+  },
   "d1_databases": [
     {
       "binding": "DB",

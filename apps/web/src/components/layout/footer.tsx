@@ -48,7 +48,7 @@ export function Footer() {
         </div>
         
         <div className="border-t border-primary-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-light text-primary-foreground/40">
-          <p>&copy; {new Date().getFullYear()} Aldergate Blinds & Shades. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Aldergate Blinds & Shades. All rights reserved. Created by Yaseen R</p>
           <div className="flex items-center gap-6">
             <a href="https://admin.pureshadeblinds.co.uk/admin" className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
           </div>
