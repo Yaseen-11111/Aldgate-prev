@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react';
-import { setAuthTokenGetter } from '@workspace/api-client-react';
-import { LogOut } from 'lucide-react';
-import { LoginForm } from './login-form';
+import { useEffect, useState } from 'react';
+import { ExternalLink, LockKeyhole, LogOut } from 'lucide-react';
 import { DashboardStats } from './dashboard-stats';
 import { ProductManager } from './product-manager';
 import { QuoteRequestsList } from './quote-requests-list';
@@ -9,22 +7,50 @@ import { GalleryManager } from './gallery-manager';
 
 type AdminView = 'dashboard' | 'gallery' | 'requests';
 
-/** Admin portal entry point: gates access behind a login form, then hosts the catalog and consultations views. */
+const adminHost = 'admin.pureshadeblinds.co.uk';
+
+/**
+ * The portal is intentionally served from the Cloudflare Access-protected admin hostname.
+ * Access authenticates staff with an email one-time code; this app never handles passwords.
+ */
 export default function AdminPortal() {
-  const [token, setToken] = useState<string | null>(sessionStorage.getItem('adminToken'));
+  const [email, setEmail] = useState<string | null>(null);
+  const [identityError, setIdentityError] = useState<string | null>(null);
   const [view, setView] = useState<AdminView>('dashboard');
+  const isAdminHost = window.location.hostname === adminHost;
 
   useEffect(() => {
-    setAuthTokenGetter(token ? () => token : null);
-  }, [token]);
+    if (!isAdminHost) return;
+    void fetch('/api/admin/me', { credentials: 'same-origin' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Your Cloudflare Access session could not be verified.');
+        return response.json() as Promise<{ email: string }>;
+      })
+      .then((identity) => setEmail(identity.email))
+      .catch((error: unknown) => setIdentityError(error instanceof Error ? error.message : 'Your Cloudflare Access session could not be verified.'));
+  }, [isAdminHost]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('adminToken');
-    setToken(null);
+    window.location.assign('/cdn-cgi/access/logout');
   };
 
-  if (!token) {
-    return <LoginForm onLoggedIn={setToken} />;
+  if (!isAdminHost) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <div className="max-w-lg border border-border bg-white p-8 text-center shadow-sm">
+          <LockKeyhole className="w-8 h-8 mx-auto mb-4 text-primary" />
+          <h1 className="text-3xl font-serif mb-3">Secure admin portal</h1>
+          <p className="text-muted-foreground mb-6">Admin access uses a verified, one-time code from Cloudflare Access. Passwords are not stored by this website.</p>
+          <a href={`https://${adminHost}/admin`} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-3 font-medium hover:bg-primary/90">
+            Continue to secure sign-in <ExternalLink className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (identityError) {
+    return <div className="container mx-auto px-4 py-20 text-center text-destructive">{identityError}</div>;
   }
 
   return (
@@ -34,7 +60,8 @@ export default function AdminPortal() {
           <h1 className="text-4xl font-serif mb-2">Admin Portal</h1>
           <p className="text-foreground/70 font-light">Manage catalog, gallery, and quote requests.</p>
         </div>
-        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
+          {email && <span className="hidden lg:block text-xs text-muted-foreground">Signed in as {email}</span>}
           <div className="flex p-1 bg-muted">
             <button
               onClick={() => setView('dashboard')}

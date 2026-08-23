@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { ProductCategory, QuoteRequestStatus } from '@workspace/api-client-react';
 
-export const loginSchema = z.object({
-  password: z.string().min(1, 'Password is required'),
-});
-export type LoginFormValues = z.infer<typeof loginSchema>;
-
 export const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   category: z.nativeEnum(ProductCategory),

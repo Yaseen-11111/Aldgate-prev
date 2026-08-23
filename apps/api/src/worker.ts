@@ -1,6 +1,4 @@
 import {
-  AdminLoginBody,
-  AdminLoginResponse,
   CreateProductBody,
   CreateProductResponse,
   CreateQuoteRequestBody,
@@ -29,8 +27,10 @@ type D1Statement = {
 type Env = {
   DB: { prepare(query: string): D1Statement };
   ASSETS: { fetch(request: Request): Promise<Response> };
-  ADMIN_PASSWORD: string;
-  SESSION_SECRET: string;
+  /** Cloudflare Access team domain, for example `your-team.cloudflareaccess.com`. */
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  /** Audience (AUD) copied from the Cloudflare Access application configuration. */
+  CF_ACCESS_AUD?: string;
 };
 
 type ProductRow = {
@@ -71,10 +71,27 @@ type GalleryMedia = { src: string; type: "image" | "video" };
 
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
-  "access-control-allow-origin": "*",
-  "access-control-allow-headers": "authorization, content-type",
-  "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
 };
+
+type AccessIdentity = {
+  email: string;
+  subject: string;
+  expiresAt: number;
+};
+
+type AccessJwtHeader = { alg?: string; kid?: string };
+type AccessJwtClaims = {
+  aud?: string | string[];
+  email?: string;
+  exp?: number;
+  iss?: string;
+  nbf?: number;
+  sub?: string;
+};
+
+type AccessJwk = { alg?: string; kid?: string; kty?: string } & Record<string, unknown>;
+
+let accessJwkCache: { expiresAt: number; keys: AccessJwk[] } | null = null;
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: jsonHeaders });
@@ -131,12 +148,6 @@ function isGalleryMedia(value: unknown): value is GalleryMedia[] {
   );
 }
 
-function base64UrlEncode(value: Uint8Array): string {
-  let binary = "";
-  for (const byte of value) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
-}
-
 function base64UrlDecode(value: string): Uint8Array {
   const padded = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
@@ -146,36 +157,86 @@ function toBufferSource(value: Uint8Array): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(value);
 }
 
-async function signingKey(secret: string): Promise<CryptoKey> {
-  return crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
-}
-
-async function createAdminToken(secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const header = base64UrlEncode(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
-  const payload = base64UrlEncode(encoder.encode(JSON.stringify({ role: "admin", exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60 })));
-  const unsigned = `${header}.${payload}`;
-  const signature = await crypto.subtle.sign("HMAC", await signingKey(secret), encoder.encode(unsigned));
-  return `${unsigned}.${base64UrlEncode(new Uint8Array(signature))}`;
-}
-
-async function isAdminToken(token: string, secret: string): Promise<boolean> {
-  const [header, payload, signature, ...extra] = token.split(".");
-  if (!header || !payload || !signature || extra.length > 0) return false;
+function parseJwtPart<T>(value: string): T | null {
   try {
-    const verified = await crypto.subtle.verify("HMAC", await signingKey(secret), toBufferSource(base64UrlDecode(signature)), new TextEncoder().encode(`${header}.${payload}`));
-    if (!verified) return false;
-    const claims = JSON.parse(new TextDecoder().decode(base64UrlDecode(payload))) as { role?: string; exp?: number };
-    return claims.role === "admin" && typeof claims.exp === "number" && claims.exp > Math.floor(Date.now() / 1000);
+    return JSON.parse(new TextDecoder().decode(base64UrlDecode(value))) as T;
   } catch {
-    return false;
+    return null;
+  }
+}
+
+function accessTeamDomain(env: Env): string | null {
+  const domain = env.CF_ACCESS_TEAM_DOMAIN?.trim().toLowerCase();
+  return domain && /^[a-z0-9-]+\.cloudflareaccess\.com$/.test(domain) ? domain : null;
+}
+
+async function accessJwks(env: Env): Promise<AccessJwk[] | null> {
+  const domain = accessTeamDomain(env);
+  if (!domain) return null;
+  if (accessJwkCache && accessJwkCache.expiresAt > Date.now()) return accessJwkCache.keys;
+
+  try {
+    const response = await fetch(`https://${domain}/cdn-cgi/access/certs`);
+    if (!response.ok) return null;
+    const data = await response.json() as { keys?: AccessJwk[] };
+    if (!Array.isArray(data.keys) || data.keys.length === 0) return null;
+    accessJwkCache = { keys: data.keys, expiresAt: Date.now() + 60 * 60 * 1000 };
+    return data.keys;
+  } catch {
+    return null;
+  }
+}
+
+/** Validates the signed Cloudflare Access assertion injected by the Access proxy. */
+async function accessIdentity(request: Request, env: Env): Promise<AccessIdentity | null> {
+  const token = request.headers.get("cf-access-jwt-assertion");
+  const audience = env.CF_ACCESS_AUD?.trim();
+  const domain = accessTeamDomain(env);
+  if (!token || !audience || !domain) return null;
+
+  const [encodedHeader, encodedClaims, encodedSignature, ...extra] = token.split(".");
+  if (!encodedHeader || !encodedClaims || !encodedSignature || extra.length > 0) return null;
+
+  const header = parseJwtPart<AccessJwtHeader>(encodedHeader);
+  const claims = parseJwtPart<AccessJwtClaims>(encodedClaims);
+  if (!header || !claims || header.alg !== "RS256" || !header.kid) return null;
+
+  const now = Math.floor(Date.now() / 1000);
+  const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (
+    !audiences.includes(audience) ||
+    claims.iss !== `https://${domain}` ||
+    typeof claims.exp !== "number" || claims.exp <= now ||
+    (typeof claims.nbf === "number" && claims.nbf > now) ||
+    typeof claims.email !== "string" || claims.email.length > 254 ||
+    typeof claims.sub !== "string" || claims.sub.length === 0
+  ) return null;
+
+  const keys = await accessJwks(env);
+  const jwk = keys?.find((key) => key.kid === header.kid && key.kty === "RSA" && key.alg === "RS256");
+  if (!jwk) return null;
+
+  try {
+    // The Worker type package omits the DOM JsonWebKey declaration, while the
+    // Web Crypto runtime accepts this standard JWK object.
+    const key = await crypto.subtle.importKey("jwk", jwk as never, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    const valid = await crypto.subtle.verify(
+      "RSASSA-PKCS1-v1_5",
+      key,
+      toBufferSource(base64UrlDecode(encodedSignature)),
+      new TextEncoder().encode(`${encodedHeader}.${encodedClaims}`),
+    );
+    return valid ? { email: claims.email.toLowerCase(), subject: claims.sub, expiresAt: claims.exp } : null;
+  } catch {
+    return null;
   }
 }
 
 async function requireAdmin(request: Request, env: Env): Promise<Response | null> {
-  const header = request.headers.get("authorization");
-  const token = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
-  if (!token || !(await isAdminToken(token, env.SESSION_SECRET))) return error("Admin authentication required", 401);
+  if (!env.CF_ACCESS_AUD || !accessTeamDomain(env)) {
+    return error("Cloudflare Access is not configured", 503);
+  }
+  if (!(await accessIdentity(request, env))) return error("Admin authentication required", 401);
   return null;
 }
 
@@ -202,12 +263,12 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
   if (request.method === "GET" && pathname === "/api/healthz") return json({ status: "ok" });
 
-  if (request.method === "POST" && pathname === "/api/admin/login") {
-    const parsed = AdminLoginBody.safeParse(await body(request));
-    if (!parsed.success) return error(parsed.error.message, 400);
-    if (!env.ADMIN_PASSWORD || !env.SESSION_SECRET) return error("Worker secrets are not configured", 500);
-    if (parsed.data.password !== env.ADMIN_PASSWORD) return error("Invalid password", 401);
-    return json(AdminLoginResponse.parse({ token: await createAdminToken(env.SESSION_SECRET) }));
+  if (request.method === "GET" && pathname === "/api/admin/me") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const identity = await accessIdentity(request, env);
+    // `requireAdmin` verifies this first; retaining the fallback prevents leaking data if it changes.
+    return identity ? json({ email: identity.email }) : error("Admin authentication required", 401);
   }
 
   if (pathname === "/api/products" && request.method === "GET") {

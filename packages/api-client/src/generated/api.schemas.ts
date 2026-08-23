@@ -59,15 +59,6 @@ export interface ProductUpdate {
   images?: string[];
 }
 
-export interface AdminLoginInput {
-  /** @minLength 1 */
-  password: string;
-}
-
-export interface AdminSession {
-  token: string;
-}
-
 export interface QuoteItem {
   productId: number;
   productName: string;

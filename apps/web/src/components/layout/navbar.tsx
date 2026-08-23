@@ -87,9 +87,9 @@ export function Navbar() {
             <Link href="/quote" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
               Your Consultation ({items.length}) <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </Link>
-            <Link href="/admin" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
+            <a href="https://admin.pureshadeblinds.co.uk/admin" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
               Admin Login <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
+            </a>
           </nav>
         </div>
       </div>

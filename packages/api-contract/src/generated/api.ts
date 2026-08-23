@@ -141,21 +141,6 @@ export const DeleteProductResponse = zod.void()
 
 
 /**
- * @summary Authenticate as admin using the shared admin password
- */
-
-
-
-export const AdminLoginBody = zod.object({
-  "password": zod.string().min(1)
-})
-
-export const AdminLoginResponse = zod.object({
-  "token": zod.string()
-})
-
-
-/**
  * @summary List all submitted quote/appointment requests (admin only)
  */
 export const ListQuoteRequestsResponseItem = zod.object({

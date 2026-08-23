@@ -160,31 +160,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /admin/login:
-    post:
-      operationId: adminLogin
-      tags: [admin]
-      summary: Authenticate as admin using the shared admin password
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AdminLoginInput"
-      responses:
-        "200":
-          description: Authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AdminSession"
-        "401":
-          description: Invalid password
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
   /quote-requests:
     get:
       operationId: listQuoteRequests
@@ -442,23 +417,6 @@ components:
           items:
             type: string
           minItems: 1
-
-    AdminLoginInput:
-      type: object
-      required:
-        - password
-      properties:
-        password:
-          type: string
-          minLength: 1
-
-    AdminSession:
-      type: object
-      required:
-        - token
-      properties:
-        token:
-          type: string
 
     QuoteItem:
       type: object

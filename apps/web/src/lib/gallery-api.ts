@@ -21,36 +21,31 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
 
-function adminHeaders(): HeadersInit {
-  const token = sessionStorage.getItem('adminToken');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
+const adminRequest = (options: RequestInit): RequestInit => ({
+  ...options,
+  credentials: 'same-origin',
+  headers: { 'Content-Type': 'application/json', ...options.headers },
+});
 
 export const getGallery = () => request<GalleryItem[]>(galleryUrl);
 
 export const createGalleryItem = (data: Pick<GalleryItem, 'media' | 'description'>) =>
-  request<GalleryItem>(galleryUrl, {
+  request<GalleryItem>(galleryUrl, adminRequest({
     method: 'POST',
-    headers: adminHeaders(),
     body: JSON.stringify(data),
-  });
+  }));
 
 export const updateGalleryItem = (id: number, data: Partial<Pick<GalleryItem, 'media' | 'description'>>) =>
-  request<GalleryItem>(`${galleryUrl}/${id}`, {
+  request<GalleryItem>(`${galleryUrl}/${id}`, adminRequest({
     method: 'PATCH',
-    headers: adminHeaders(),
     body: JSON.stringify(data),
-  });
+  }));
 
 export const reorderGalleryItems = (ids: number[]) =>
-  request<GalleryItem[]>(`${galleryUrl}/reorder`, {
+  request<GalleryItem[]>(`${galleryUrl}/reorder`, adminRequest({
     method: 'PATCH',
-    headers: adminHeaders(),
     body: JSON.stringify({ ids }),
-  });
+  }));
 
 export const deleteGalleryItem = (id: number) =>
-  request<void>(`${galleryUrl}/${id}`, { method: 'DELETE', headers: adminHeaders() });
+  request<void>(`${galleryUrl}/${id}`, adminRequest({ method: 'DELETE' }));
