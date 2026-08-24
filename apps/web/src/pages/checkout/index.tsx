@@ -51,7 +51,7 @@ export default function Checkout() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <BookingStep form={form} onBack={() => setStep(1)} isSubmitting={createRequest.isPending} />
+          <BookingStep form={form} isSubmitting={createRequest.isPending} />
           {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
         </form>
       </Form>
