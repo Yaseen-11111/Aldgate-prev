@@ -5,12 +5,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { checkoutFormSchema, checkoutFormDefaults, type CheckoutFormValues } from './schema';
+import { StepProgress } from './step-progress';
 import { BookingStep } from './booking-step';
 import { Confirmation } from './confirmation';
 
 /** Two-step checkout flow: review shortlist, then book a free home appointment. */
 export default function Checkout() {
   const { items, clear } = useQuoteStore();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const createRequest = useCreateQuoteRequest();
 
@@ -35,8 +37,8 @@ export default function Checkout() {
       },
     }, {
       onSuccess: () => {
+        setStep(3);
         clear();
-        return <Confirmation />;
       },
       onError: (error) => {
         setSubmissionError(error instanceof Error ? error.message : 'Unable to confirm your appointment. Please try again.');
@@ -44,11 +46,17 @@ export default function Checkout() {
     });
   };
 
+  if (step === 3) {
+    return <Confirmation />;
+  }
+
   return (
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-4xl min-h-[80vh]">
+      <StepProgress step={step === 2 ? 2 : 1} onSelectStep={setStep} />
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <BookingStep onBack=() form={form} isSubmitting={createRequest.isPending} />
+          <BookingStep form={form} onBack={()} isSubmitting={createRequest.isPending} />
           {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
         </form>
       </Form>
