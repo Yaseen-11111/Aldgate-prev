@@ -12,6 +12,7 @@ import { Confirmation } from './confirmation';
 /** Two-step checkout flow: review shortlist, then book a free home appointment. */
 export default function Checkout() {
   const { items, clear } = useQuoteStore();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const createRequest = useCreateQuoteRequest();
 
@@ -53,7 +54,7 @@ export default function Checkout() {
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-4xl min-h-[80vh]">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <BookingStep form={form} onBack={() => setStep(1)} isSubmitting={createRequest.isPending} />
+          <BookingStep form={form} isSubmitting={createRequest.isPending} />
           {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
         </form>
       </Form>
