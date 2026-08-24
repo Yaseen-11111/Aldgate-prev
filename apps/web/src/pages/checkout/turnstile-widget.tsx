@@ -16,7 +16,6 @@ type TurnstileOptions = {
 
 type TurnstileApi = {
   render: (container: HTMLElement, options: TurnstileOptions) => string;
-  ready: (callback: () => void) => void;
   reset: (widgetId: string) => void;
   remove: (widgetId: string) => void;
 };
@@ -30,7 +29,7 @@ declare global {
 let loadPromise: Promise<void> | null = null;
 
 function loadTurnstile(): Promise<void> {
-  if (window.turnstile) return new Promise<void>((resolve) => window.turnstile?.ready(() => resolve()));
+  if (window.turnstile) return Promise.resolve();
   if (loadPromise) return loadPromise;
 
   const promise = new Promise<void>((resolve, reject) => {
@@ -42,7 +41,7 @@ function loadTurnstile(): Promise<void> {
       if (settled || !window.turnstile) return;
       settled = true;
       if (timer !== undefined) window.clearInterval(timer);
-      window.turnstile.ready(() => resolve());
+      resolve();
     };
     const fail = (reason: Error) => {
       if (settled) return;
@@ -62,7 +61,6 @@ function loadTurnstile(): Promise<void> {
     if (!existing) {
       script.id = scriptId;
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      script.async = true;
       document.head.appendChild(script);
     }
     // A route change can mount after api.js has already fired its load event.
