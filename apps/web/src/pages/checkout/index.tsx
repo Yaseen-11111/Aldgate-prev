@@ -51,8 +51,6 @@ export default function Checkout() {
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-4xl min-h-[80vh]">
-      <StepProgress step={step === 2 ? 2 : 1} onSelectStep={setStep} />
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <BookingStep form={form} onBack={() => setStep(1)} isSubmitting={createRequest.isPending} />
