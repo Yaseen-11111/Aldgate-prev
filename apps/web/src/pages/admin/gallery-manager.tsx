@@ -6,21 +6,10 @@ import { CSS } from '@dnd-kit/utilities';
 import { ChevronLeft, ChevronRight, GripVertical, ImagePlus, Loader2, Play, Plus, Trash2, Upload } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { createGalleryItem, deleteGalleryItem, getGallery, reorderGalleryItems, updateGalleryItem, type GalleryItem, type GalleryMedia } from '@/lib/gallery-api';
+import { createGalleryItem, deleteGalleryItem, getGallery, reorderGalleryItems, updateGalleryItem, uploadGalleryMedia, type GalleryItem } from '@/lib/gallery-api';
 
 const galleryKey = ['gallery'];
-const maxUploadBytes = 1024 * 1024;
-
-async function fileToMedia(file: File): Promise<GalleryMedia> {
-  const type = file.type.startsWith('video/') ? 'video' : 'image';
-  const src = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
-    reader.onload = () => resolve(String(reader.result));
-    reader.readAsDataURL(file);
-  });
-  return { src, type };
-}
+const maxUploadBytes = 25 * 1024 * 1024;
 
 function acceptedFiles(files: FileList | File[]) {
   return Array.from(files).filter((file) => file.type.startsWith('image/') || file.type.startsWith('video/'));
@@ -41,12 +30,12 @@ export function GalleryManager() {
     const uploads = acceptedFiles(files);
     if (uploads.length === 0) return;
     if (uploads.some((file) => file.size > maxUploadBytes)) {
-      toast({ title: 'File too large', description: 'Please choose images or videos smaller than 1 MB.', variant: 'destructive' });
+      toast({ title: 'File too large', description: 'Please choose images or videos smaller than 25 MB.', variant: 'destructive' });
       return;
     }
     setIsUploading(true);
     try {
-      for (const file of uploads) await createGalleryItem({ media: [await fileToMedia(file)], description: '' });
+      for (const file of uploads) await createGalleryItem({ media: [await uploadGalleryMedia(file)], description: '' });
       await refresh();
       toast({ title: `${uploads.length} gallery card${uploads.length === 1 ? '' : 's'} added` });
     } catch (error) {
@@ -110,8 +99,8 @@ function GalleryEditorCard({ item, onDelete, onSave }: { item: GalleryItem; onDe
   const addMedia = async (files: FileList | File[]) => {
     const uploads = acceptedFiles(files);
     if (uploads.length === 0) return;
-    if (uploads.some((file) => file.size > maxUploadBytes)) { toast({ title: 'File too large', description: 'Please choose files smaller than 1 MB.', variant: 'destructive' }); return; }
-    await save({ media: [...item.media, ...await Promise.all(uploads.map(fileToMedia))] });
+    if (uploads.some((file) => file.size > maxUploadBytes)) { toast({ title: 'File too large', description: 'Please choose files smaller than 25 MB.', variant: 'destructive' }); return; }
+    await save({ media: [...item.media, ...await Promise.all(uploads.map(uploadGalleryMedia))] });
   };
   const removeActiveMedia = async () => {
     if (item.media.length < 2 || !confirm('Remove this item from the carousel?')) return;

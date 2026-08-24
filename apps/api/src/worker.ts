@@ -24,9 +24,22 @@ type D1Statement = {
   run(): Promise<D1Result<never>>;
 };
 
+type R2Object = {
+  body: ReadableStream;
+  httpMetadata?: { contentType?: string };
+};
+
+type R2Bucket = {
+  put(key: string, value: ArrayBuffer, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
+  get(key: string): Promise<R2Object | null>;
+  delete(keys: string | string[]): Promise<void>;
+};
+
 type Env = {
   DB: { prepare(query: string): D1Statement };
   ASSETS: { fetch(request: Request): Promise<Response> };
+  /** Gallery media object storage. Configure the GALLERY_MEDIA R2 binding in Cloudflare. */
+  GALLERY_MEDIA?: R2Bucket;
   /** Server-only Cloudflare Turnstile secret used to verify consultation requests. */
   TURNSTILE_SECRET?: string;
   /** Server-only Resend API key for consultation notification emails. */
@@ -87,6 +100,17 @@ type AuditEventRow = {
 };
 
 const appointmentTimeWindows = ["Morning (9am - 12pm)", "Afternoon (12pm - 4pm)", "Evening (4pm - 7pm)"] as const;
+const maxGalleryUploadBytes = 25 * 1024 * 1024;
+const galleryMediaPath = "/api/gallery-media/";
+const galleryMediaTypes: Record<string, { type: GalleryMedia["type"]; extension: string }> = {
+  "image/jpeg": { type: "image", extension: "jpg" },
+  "image/png": { type: "image", extension: "png" },
+  "image/webp": { type: "image", extension: "webp" },
+  "image/gif": { type: "image", extension: "gif" },
+  "video/mp4": { type: "video", extension: "mp4" },
+  "video/webm": { type: "video", extension: "webm" },
+  "video/quicktime": { type: "video", extension: "mov" },
+};
 
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
@@ -176,6 +200,22 @@ function isGalleryMedia(value: unknown): value is GalleryMedia[] {
 function base64UrlDecode(value: string): Uint8Array {
   const padded = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+}
+
+function r2GalleryKey(src: string): string | null {
+  if (!src.startsWith(galleryMediaPath)) return null;
+  const key = src.slice(galleryMediaPath.length);
+  return /^gallery\/[a-f0-9-]{36}\.[a-z0-9]+$/.test(key) ? key : null;
+}
+
+async function deleteGalleryMedia(env: Env, media: GalleryMedia[]): Promise<void> {
+  const keys = media.map((item) => r2GalleryKey(item.src)).filter((key): key is string => key !== null);
+  if (keys.length === 0 || !env.GALLERY_MEDIA) return;
+  try {
+    await env.GALLERY_MEDIA.delete(keys);
+  } catch (exception) {
+    console.error("Could not remove gallery media from R2", exception);
+  }
 }
 
 function toBufferSource(value: Uint8Array): Uint8Array<ArrayBuffer> {
@@ -487,6 +527,42 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Product not found", 404);
   }
 
+  if (pathname === "/api/admin/gallery-media" && request.method === "POST") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    if (!env.GALLERY_MEDIA) return error("Gallery media storage is not configured", 503);
+    let form: FormData;
+    try {
+      form = await request.formData();
+    } catch {
+      return error("Upload must use multipart form data", 400);
+    }
+    const file = form.get("file");
+    if (!(file instanceof File)) return error("Select an image or video to upload", 400);
+    const format = galleryMediaTypes[file.type.toLowerCase()];
+    if (!format) return error("Supported files are JPG, PNG, WebP, GIF, MP4, WebM, and MOV", 400);
+    if (file.size === 0 || file.size > maxGalleryUploadBytes) return error("Gallery uploads must be smaller than 25 MB", 400);
+    const key = `gallery/${crypto.randomUUID()}.${format.extension}`;
+    await env.GALLERY_MEDIA.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
+    await recordAuditEvent(request, env, "uploaded", "gallery media", null);
+    return json({ src: `${galleryMediaPath}${key}`, type: format.type }, 201);
+  }
+
+  if (pathname.startsWith(galleryMediaPath) && request.method === "GET") {
+    const key = r2GalleryKey(pathname);
+    if (!key) return error("Gallery media not found", 404);
+    if (!env.GALLERY_MEDIA) return error("Gallery media storage is not configured", 503);
+    const object = await env.GALLERY_MEDIA.get(key);
+    if (!object) return error("Gallery media not found", 404);
+    return new Response(object.body, {
+      headers: {
+        "content-type": object.httpMetadata?.contentType ?? "application/octet-stream",
+        "cache-control": "public, max-age=31536000, immutable",
+        "x-content-type-options": "nosniff",
+      },
+    });
+  }
+
   if (pathname === "/api/gallery" && request.method === "GET") {
     const result = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items ORDER BY sort_order ASC, id ASC").all<GalleryItemRow>();
     return json((result.results ?? []).map(galleryItemFromRow));
@@ -539,6 +615,8 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const media = (input as { media?: unknown }).media;
     const description = (input as { description?: unknown }).description;
     if ((media !== undefined && !isGalleryMedia(media)) || (description !== undefined && typeof description !== "string")) return error("Invalid gallery item", 400);
+    const existing = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items WHERE id = ?").bind(galleryId).first<GalleryItemRow>();
+    if (!existing) return error("Gallery item not found", 404);
     const fields: Array<[string, string]> = [];
     if (isGalleryMedia(media)) {
       fields.push(["image_src", media[0].src], ["media", JSON.stringify(media)]);
@@ -548,6 +626,10 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const update = `UPDATE gallery_items SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;
     const result = await env.DB.prepare(update).bind(...fields.map(([, value]) => value), galleryId).run();
     if (!result.meta?.changes) return error("Gallery item not found", 404);
+    if (isGalleryMedia(media)) {
+      const retained = new Set(media.map((item) => item.src));
+      await deleteGalleryMedia(env, galleryItemFromRow(existing).media.filter((item) => !retained.has(item.src)));
+    }
     const row = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items WHERE id = ?").bind(galleryId).first<GalleryItemRow>();
     await recordAuditEvent(request, env, "updated", "gallery item", galleryId);
     return json(galleryItemFromRow(row!));
@@ -555,7 +637,9 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   if (galleryId !== null && request.method === "DELETE") {
     const forbidden = await requireAdmin(request, env);
     if (forbidden) return forbidden;
+    const existing = await env.DB.prepare("SELECT id, image_src, media, description, created_at FROM gallery_items WHERE id = ?").bind(galleryId).first<GalleryItemRow>();
     const result = await env.DB.prepare("DELETE FROM gallery_items WHERE id = ?").bind(galleryId).run();
+    if (result.meta?.changes && existing) await deleteGalleryMedia(env, galleryItemFromRow(existing).media);
     if (result.meta?.changes) await recordAuditEvent(request, env, "deleted", "gallery item", galleryId);
     return result.meta?.changes ? new Response(null, { status: 204, headers: jsonHeaders }) : error("Gallery item not found", 404);
   }

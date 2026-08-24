@@ -27,6 +27,16 @@ const adminRequest = (options: RequestInit): RequestInit => ({
   headers: { 'Content-Type': 'application/json', ...options.headers },
 });
 
+export async function uploadGalleryMedia(file: File): Promise<GalleryMedia> {
+  const form = new FormData();
+  form.append('file', file);
+  return request<GalleryMedia>('/api/admin/gallery-media', {
+    method: 'POST',
+    body: form,
+    credentials: 'same-origin',
+  });
+}
+
 export const getGallery = () => request<GalleryItem[]>(galleryUrl);
 
 export const createGalleryItem = (data: Pick<GalleryItem, 'media' | 'description'>) =>

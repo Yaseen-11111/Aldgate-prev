@@ -18,5 +18,11 @@
       "database_id": "1cc8439a-6f25-4bad-9e5b-3eba3d6f3353",
       "migrations_dir": "migrations"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "GALLERY_MEDIA",
+      "bucket_name": "pure-shade-gallery"
+    }
   ]
 }
