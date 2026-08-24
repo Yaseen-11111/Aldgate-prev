@@ -179,6 +179,7 @@ type TurnstileVerification = {
   success?: boolean;
   action?: string;
   hostname?: string;
+  "error-codes"?: string[];
 };
 
 let accessJwkCache: { expiresAt: number; keys: AccessJwk[] } | null = null;
@@ -412,7 +413,6 @@ async function verifyTurnstile(request: Request, env: Env, token: unknown): Prom
     const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
-      signal: AbortSignal.timeout(10_000),
       body: new URLSearchParams({
         secret,
         response: token,
@@ -428,6 +428,12 @@ async function verifyTurnstile(request: Request, env: Env, token: unknown): Prom
 
   const expectedHostname = new URL(request.url).hostname.toLowerCase();
   if (result.success !== true || result.action !== "consultation" || result.hostname?.toLowerCase() !== expectedHostname) {
+    console.warn("Turnstile validation rejected", {
+      action: result.action,
+      expectedHostname,
+      hostname: result.hostname,
+      errorCodes: result["error-codes"],
+    });
     return error("The security check was not accepted. Please complete it again.", 403);
   }
   return null;
