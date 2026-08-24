@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://pureshadeblinds.co.uk/sitemap.xml

@@ -489,6 +489,7 @@ components:
         - preferredDate
         - preferredTimeWindow
         - status
+        - adminNotes
         - createdAt
       properties:
         id:
@@ -516,7 +517,9 @@ components:
           type: string
         status:
           type: string
-          enum: [pending, contacted, completed]
+          enum: [pending, contacted, confirmed, measured, completed, cancelled]
+        adminNotes:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -548,7 +551,10 @@ components:
           type: ["number", "null"]
         status:
           type: string
-          enum: [pending, contacted, completed]
+          enum: [pending, contacted, confirmed, measured, completed, cancelled]
+        adminNotes:
+          type: string
+          maxLength: 5000
 
     QuoteRequestSummary:
       type: object

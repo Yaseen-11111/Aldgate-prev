@@ -29,7 +29,8 @@ export type QuoteRequestRecord = {
   postcode: string;
   preferredDate: Date;
   preferredTimeWindow: string;
-  status: "pending" | "contacted" | "completed";
+  status: "pending" | "contacted" | "confirmed" | "measured" | "completed" | "cancelled";
+  adminNotes: string;
   createdAt: Date;
 };
 
@@ -52,7 +53,7 @@ type StoreData = {
 };
 
 type ProductInput = Omit<ProductRecord, "id" | "createdAt">;
-type QuoteRequestInput = Omit<QuoteRequestRecord, "id" | "createdAt" | "status">;
+type QuoteRequestInput = Omit<QuoteRequestRecord, "id" | "createdAt" | "status" | "adminNotes">;
 
 const storePath = path.resolve(import.meta.dirname, "..", "..", "..", "data", "store.json");
 let storePromise: Promise<StoreData> | null = null;
@@ -121,6 +122,7 @@ function reviveStore(value: StoreData): StoreData {
     products: value.products.map((product) => ({ ...product, createdAt: new Date(product.createdAt) })),
     quoteRequests: value.quoteRequests.map((request) => ({
       ...request,
+      adminNotes: request.adminNotes ?? "",
       createdAt: new Date(request.createdAt),
       preferredDate: new Date(request.preferredDate),
     })),
@@ -207,6 +209,7 @@ export async function createStoredQuoteRequest(input: QuoteRequestInput): Promis
     ...input,
     id: Math.max(0, ...store.quoteRequests.map((item) => item.id)) + 1,
     status: "pending",
+    adminNotes: "",
     createdAt: new Date(),
   };
   store.quoteRequests.push(request);

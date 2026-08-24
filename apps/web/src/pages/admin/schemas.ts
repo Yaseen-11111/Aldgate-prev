@@ -19,5 +19,6 @@ export const requestEditSchema = z.object({
   preferredDate: z.string().min(1, 'Date is required'),
   preferredTimeWindow: z.string().min(1, 'Time window is required'),
   status: z.nativeEnum(QuoteRequestStatus),
+  adminNotes: z.string().max(5000, 'Notes must be 5,000 characters or fewer'),
 });
 export type RequestEditFormValues = z.infer<typeof requestEditSchema>;

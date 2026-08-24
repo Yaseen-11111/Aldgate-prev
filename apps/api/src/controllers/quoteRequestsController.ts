@@ -30,7 +30,7 @@ export async function createQuoteRequest(req: Request, res: Response): Promise<v
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { preferredDate, widthCm, dropCm, ...rest } = parsed.data;
+  const { preferredDate, widthCm, dropCm, turnstileToken: _turnstileToken, ...rest } = parsed.data;
   const request = await createStoredQuoteRequest({
     ...rest,
     preferredDate: new Date(preferredDate),

@@ -76,7 +76,8 @@ type QuoteRequestRow = {
   postcode: string;
   preferred_date: string;
   preferred_time_window: string;
-  status: "pending" | "contacted" | "completed";
+  status: "pending" | "contacted" | "confirmed" | "measured" | "completed" | "cancelled";
+  admin_notes: string;
   created_at: string;
 };
 
@@ -116,6 +117,14 @@ const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
 };
 
+const securityHeaders = {
+  "content-security-policy": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; media-src 'self' blob:; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; upgrade-insecure-requests",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=()",
+};
+
 type AccessIdentity = {
   email: string;
   subject: string;
@@ -150,6 +159,10 @@ function error(message: string, status: number): Response {
   return json({ error: message }, status);
 }
 
+function csvValue(value: unknown): string {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
 function productFromRow(row: ProductRow) {
   return {
     id: row.id,
@@ -176,6 +189,7 @@ function quoteRequestFromRow(row: QuoteRequestRow) {
     preferredDate: new Date(row.preferred_date),
     preferredTimeWindow: row.preferred_time_window,
     status: row.status,
+    adminNotes: row.admin_notes,
     createdAt: new Date(row.created_at),
   };
 }
@@ -450,6 +464,14 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 
   if (request.method === "GET" && pathname === "/api/healthz") return json({ status: "ok" });
 
+  if (request.method === "GET" && pathname === "/sitemap.xml") {
+    const result = await env.DB.prepare("SELECT id FROM products ORDER BY id ASC").all<{ id: number }>();
+    const origin = url.origin;
+    const pages = ["/", "/catalog", "/about", "/gallery", ...((result.results ?? []).map((product) => `/catalog/${product.id}`))];
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map((path) => `<url><loc>${origin}${path}</loc></url>`).join("")}</urlset>`;
+    return new Response(xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
+  }
+
   if (request.method === "GET" && pathname === "/api/admin/me") {
     const forbidden = await requireAdmin(request, env);
     if (forbidden) return forbidden;
@@ -471,6 +493,21 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       targetId: event.target_id,
       createdAt: event.created_at,
     })));
+  }
+
+  if (request.method === "GET" && pathname === "/api/admin/quote-requests.csv") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const result = await env.DB.prepare("SELECT * FROM quote_requests ORDER BY created_at DESC").all<QuoteRequestRow>();
+    const heading = ["ID", "Created", "Status", "Name", "Email", "Phone", "Postcode", "Preferred date", "Preferred time", "Width cm", "Drop cm", "Products", "Admin notes"];
+    const rows = (result.results ?? []).map((row) => [
+      row.id, row.created_at, row.status, row.name, row.email, row.phone, row.postcode, row.preferred_date,
+      row.preferred_time_window, row.width_cm ?? "", row.drop_cm ?? "",
+      (JSON.parse(row.items) as Array<{ productName: string }>).map((item) => item.productName).join("; "), row.admin_notes,
+    ].map(csvValue).join(","));
+    return new Response([heading.map(csvValue).join(","), ...rows].join("\r\n"), {
+      headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": "attachment; filename=consultations.csv" },
+    });
   }
 
   if (pathname === "/api/products" && request.method === "GET") {
@@ -656,7 +693,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       return error("Select a valid appointment time window", 400);
     }
     const date = input.preferredDate.toISOString().slice(0, 10);
-    const availability = await env.DB.prepare("SELECT id FROM quote_requests WHERE preferred_date = ? AND preferred_time_window = ? AND status != 'completed' LIMIT 1")
+    const availability = await env.DB.prepare("SELECT id FROM quote_requests WHERE preferred_date = ? AND preferred_time_window = ? AND status NOT IN ('completed', 'cancelled') LIMIT 1")
       .bind(date, input.preferredTimeWindow).first<{ id: number }>();
     if (availability) return error("That appointment slot has just been taken. Please choose another time.", 409);
     const inserted = await env.DB.prepare("INSERT INTO quote_requests (items, width_cm, drop_cm, name, phone, email, postcode, preferred_date, preferred_time_window) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
@@ -669,7 +706,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   if (pathname === "/api/appointment-availability" && request.method === "GET") {
     const date = url.searchParams.get("date");
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return error("A valid appointment date is required", 400);
-    const result = await env.DB.prepare("SELECT preferred_time_window FROM quote_requests WHERE preferred_date = ? AND status != 'completed'")
+    const result = await env.DB.prepare("SELECT preferred_time_window FROM quote_requests WHERE preferred_date = ? AND status NOT IN ('completed', 'cancelled')")
       .bind(date).all<{ preferred_time_window: string }>();
     const unavailableTimeWindows = (result.results ?? [])
       .map((row) => row.preferred_time_window)
@@ -707,7 +744,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const fields = [
       ["name", parsed.data.name], ["phone", parsed.data.phone], ["email", parsed.data.email], ["postcode", parsed.data.postcode],
       ["preferred_date", parsed.data.preferredDate === undefined ? undefined : parsed.data.preferredDate.toISOString().slice(0, 10)],
-      ["preferred_time_window", parsed.data.preferredTimeWindow], ["width_cm", parsed.data.widthCm], ["drop_cm", parsed.data.dropCm], ["status", parsed.data.status],
+      ["preferred_time_window", parsed.data.preferredTimeWindow], ["width_cm", parsed.data.widthCm], ["drop_cm", parsed.data.dropCm], ["status", parsed.data.status], ["admin_notes", parsed.data.adminNotes],
     ].flatMap(([field, value]) => value === undefined ? [] : [[field, value] as [string, unknown]]);
     if (fields.length === 0) return error("At least one field must be provided", 400);
     const update = `UPDATE quote_requests SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;
@@ -731,7 +768,13 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
-      return new URL(request.url).pathname.startsWith("/api/") ? await handleApi(request, env) : env.ASSETS.fetch(request);
+      const pathname = new URL(request.url).pathname;
+      const response = pathname.startsWith("/api/") || pathname === "/sitemap.xml"
+        ? await handleApi(request, env)
+        : await env.ASSETS.fetch(request);
+      const headers = new Headers(response.headers);
+      for (const [name, value] of Object.entries(securityHeaders)) headers.set(name, value);
+      return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
     } catch (exception) {
       console.error(exception);
       return error("Internal server error", 500);

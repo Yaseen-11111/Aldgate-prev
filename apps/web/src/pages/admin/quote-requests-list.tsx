@@ -10,10 +10,11 @@ import {
   useDeleteQuoteRequest,
   getListQuoteRequestsQueryKey,
 } from '@workspace/api-client-react';
-import { Loader2, Pencil, Save, Trash2, X } from 'lucide-react';
+import { Download, Loader2, Pencil, Save, Trash2, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { requestEditSchema, type RequestEditFormValues } from './schemas';
 
@@ -43,6 +44,7 @@ export function QuoteRequestsList() {
       preferredDate: request.preferredDate,
       preferredTimeWindow: request.preferredTimeWindow,
       status: request.status,
+      adminNotes: request.adminNotes,
     });
   };
 
@@ -80,7 +82,12 @@ export function QuoteRequestsList() {
 
   return (
     <div>
-      <h2 className="text-2xl font-serif mb-6">Consultation Requests</h2>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h2 className="text-2xl font-serif">Consultation Requests</h2>
+        <a href="/api/admin/quote-requests.csv" className="inline-flex h-10 items-center gap-2 border border-border px-4 text-sm font-medium hover:bg-muted">
+          <Download className="w-4 h-4" /> Export CSV
+        </a>
+      </div>
       {requests?.length === 0 ? (
         <div className="p-12 text-center bg-white border border-border">
           <p className="text-muted-foreground">No consultation requests have been submitted yet.</p>
@@ -125,11 +132,17 @@ export function QuoteRequestsList() {
                             <SelectContent>
                               <SelectItem value={QuoteRequestStatus.pending}>Pending</SelectItem>
                               <SelectItem value={QuoteRequestStatus.contacted}>Contacted</SelectItem>
+                              <SelectItem value={QuoteRequestStatus.confirmed}>Confirmed</SelectItem>
+                              <SelectItem value={QuoteRequestStatus.measured}>Measured</SelectItem>
                               <SelectItem value={QuoteRequestStatus.completed}>Completed</SelectItem>
+                              <SelectItem value={QuoteRequestStatus.cancelled}>Cancelled</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
+                      )} />
+                      <FormField control={form.control} name="adminNotes" render={({ field }) => (
+                        <FormItem className="md:col-span-2"><FormLabel>Private Admin Notes</FormLabel><FormControl><Textarea {...field} rows={4} placeholder="Visible only to admin users…" /></FormControl><FormMessage /></FormItem>
                       )} />
                     </div>
                     <button type="submit" disabled={updateRequest.isPending} className="h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-2 transition-colors">

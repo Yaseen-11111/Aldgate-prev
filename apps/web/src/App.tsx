@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { Layout } from '@/components/layout';
+import { Seo } from '@/components/seo';
 
 const Home = lazy(() => import('@/pages/home'));
 const Catalog = lazy(() => import('@/pages/catalog'));
@@ -42,6 +43,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Seo />
           <Router />
         </WouterRouter>
         <Toaster />

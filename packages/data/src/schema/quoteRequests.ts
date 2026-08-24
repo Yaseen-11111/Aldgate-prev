@@ -27,7 +27,8 @@ export const quoteRequestsTable = pgTable("quote_requests", {
   postcode: text("postcode").notNull(),
   preferredDate: date("preferred_date", { mode: "string" }).notNull(),
   preferredTimeWindow: text("preferred_time_window").notNull(),
-  status: text("status").notNull().default("pending"), // pending | contacted | completed
+  status: text("status").notNull().default("pending"), // pending | contacted | confirmed | measured | completed | cancelled
+  adminNotes: text("admin_notes").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
