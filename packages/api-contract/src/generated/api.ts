@@ -172,6 +172,8 @@ export const ListQuoteRequestsResponse = zod.array(ListQuoteRequestsResponseItem
 
 
 
+export const createQuoteRequestBodyTurnstileTokenMax = 2048;
+
 
 
 export const CreateQuoteRequestBody = zod.object({
@@ -187,7 +189,8 @@ export const CreateQuoteRequestBody = zod.object({
   "email": zod.string().min(1),
   "postcode": zod.string().min(1),
   "preferredDate": zod.coerce.date(),
-  "preferredTimeWindow": zod.string().min(1)
+  "preferredTimeWindow": zod.string().min(1),
+  "turnstileToken": zod.string().min(1).max(createQuoteRequestBodyTurnstileTokenMax)
 })
 
 export const CreateQuoteRequestResponse = zod.object({

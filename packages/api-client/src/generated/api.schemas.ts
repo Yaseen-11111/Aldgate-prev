@@ -82,6 +82,11 @@ export interface QuoteRequestInput {
   preferredDate: string;
   /** @minLength 1 */
   preferredTimeWindow: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     */
+  turnstileToken: string;
 }
 
 export type QuoteRequestStatus = typeof QuoteRequestStatus[keyof typeof QuoteRequestStatus];

@@ -6,6 +6,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescripti
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckoutFormValues } from './schema';
+import { TurnstileWidget } from './turnstile-widget';
 
 interface BookingStepProps {
   form: UseFormReturn<CheckoutFormValues>;
@@ -132,12 +133,30 @@ export function BookingStep({ form, onBack, isSubmitting }: BookingStepProps) {
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="turnstileToken"
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel>Security check</FormLabel>
+              <TurnstileWidget
+                onTokenChange={(token) => field.onChange(token)}
+                resetSignal={isSubmitting}
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
 
       <div className="flex justify-between items-center pt-6">
         <button
           type="button"
-          onClick={onBack}
+          onClick={() => {
+            form.setValue('turnstileToken', '');
+            onBack();
+          }}
           className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back

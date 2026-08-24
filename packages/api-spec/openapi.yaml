@@ -442,6 +442,7 @@ components:
         - postcode
         - preferredDate
         - preferredTimeWindow
+        - turnstileToken
       properties:
         items:
           type: array
@@ -469,6 +470,10 @@ components:
         preferredTimeWindow:
           type: string
           minLength: 1
+        turnstileToken:
+          type: string
+          minLength: 1
+          maxLength: 2048
 
     QuoteRequest:
       type: object

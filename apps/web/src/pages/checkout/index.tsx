@@ -34,6 +34,7 @@ export default function Checkout() {
         postcode: data.postcode,
         preferredDate: data.preferredDate,
         preferredTimeWindow: data.preferredTimeWindow,
+        turnstileToken: data.turnstileToken,
         widthCm: isNaN(data.widthCm as number) ? null : data.widthCm,
         dropCm: isNaN(data.dropCm as number) ? null : data.dropCm,
       },

@@ -7,6 +7,7 @@ export const checkoutFormSchema = z.object({
   postcode: z.string().min(3, 'Postcode is required'),
   preferredDate: z.string().min(1, 'Please select a preferred date'),
   preferredTimeWindow: z.string().min(1, 'Please select a time window'),
+  turnstileToken: z.string().min(1, 'Please complete the security check'),
   widthCm: z.union([z.number(), z.nan()]).optional(),
   dropCm: z.union([z.number(), z.nan()]).optional(),
 });
@@ -20,6 +21,7 @@ export const checkoutFormDefaults: CheckoutFormValues = {
   postcode: '',
   preferredDate: '',
   preferredTimeWindow: '',
+  turnstileToken: '',
   widthCm: undefined,
   dropCm: undefined,
 };

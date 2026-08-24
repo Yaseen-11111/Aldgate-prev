@@ -24,4 +24,9 @@ export interface QuoteRequestInput {
   preferredDate: Date;
   /** @minLength 1 */
   preferredTimeWindow: string;
+  /**
+     * @minLength 1
+     * @maxLength 2048
+     */
+  turnstileToken: string;
 }

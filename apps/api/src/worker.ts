@@ -27,6 +27,8 @@ type D1Statement = {
 type Env = {
   DB: { prepare(query: string): D1Statement };
   ASSETS: { fetch(request: Request): Promise<Response> };
+  /** Server-only Cloudflare Turnstile secret used to verify consultation requests. */
+  TURNSTILE_SECRET?: string;
   /** Cloudflare Access team domain, for example `your-team.cloudflareaccess.com`. */
   CF_ACCESS_TEAM_DOMAIN?: string;
   /** Audience (AUD) copied from the Cloudflare Access application configuration. */
@@ -101,6 +103,12 @@ type AccessJwtClaims = {
 };
 
 type AccessJwk = { alg?: string; kid?: string; kty?: string } & Record<string, unknown>;
+
+type TurnstileVerification = {
+  success?: boolean;
+  action?: string;
+  hostname?: string;
+};
 
 let accessJwkCache: { expiresAt: number; keys: AccessJwk[] } | null = null;
 
@@ -282,6 +290,47 @@ async function body(request: Request): Promise<unknown> {
   }
 }
 
+/**
+ * Verifies the one-time Turnstile token before a public consultation is stored.
+ * The hostname is checked against the actual hostname serving this request so a
+ * token from another site or preview cannot be replayed here.
+ */
+async function verifyTurnstile(request: Request, env: Env, token: unknown): Promise<Response | null> {
+  const secret = env.TURNSTILE_SECRET?.trim();
+  if (!secret) {
+    console.error("TURNSTILE_SECRET is not configured");
+    return error("Booking protection is temporarily unavailable. Please try again shortly.", 503);
+  }
+  if (typeof token !== "string" || token.length === 0 || token.length > 2048) {
+    return error("Please complete the security check before confirming your appointment.", 403);
+  }
+
+  let result: TurnstileVerification;
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      signal: AbortSignal.timeout(10_000),
+      body: new URLSearchParams({
+        secret,
+        response: token,
+        remoteip: request.headers.get("cf-connecting-ip") ?? "",
+      }),
+    });
+    if (!response.ok) throw new Error(`Turnstile Siteverify returned ${response.status}`);
+    result = await response.json() as TurnstileVerification;
+  } catch (exception) {
+    console.error("Turnstile Siteverify request failed", exception);
+    return error("We could not verify the security check. Please try again.", 503);
+  }
+
+  const expectedHostname = new URL(request.url).hostname.toLowerCase();
+  if (result.success !== true || result.action !== "consultation" || result.hostname?.toLowerCase() !== expectedHostname) {
+    return error("The security check was not accepted. Please complete it again.", 403);
+  }
+  return null;
+}
+
 function validId(pathname: string, prefix: string): number | null {
   const match = new RegExp(`^${prefix}/(\\d+)$`).exec(pathname);
   if (!match) return null;
@@ -448,7 +497,11 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   }
 
   if (pathname === "/api/quote-requests" && request.method === "POST") {
-    const parsed = CreateQuoteRequestBody.safeParse(await body(request));
+    const requestBody = await body(request);
+    const turnstileToken = requestBody && typeof requestBody === "object" ? (requestBody as { turnstileToken?: unknown }).turnstileToken : undefined;
+    const turnstileError = await verifyTurnstile(request, env, turnstileToken);
+    if (turnstileError) return turnstileError;
+    const parsed = CreateQuoteRequestBody.safeParse(requestBody);
     if (!parsed.success) return error(parsed.error.message, 400);
     const input = parsed.data;
     if (!appointmentTimeWindows.includes(input.preferredTimeWindow as (typeof appointmentTimeWindows)[number])) {
