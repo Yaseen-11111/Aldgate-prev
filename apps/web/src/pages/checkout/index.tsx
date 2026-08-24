@@ -5,8 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { checkoutFormSchema, checkoutFormDefaults, type CheckoutFormValues } from './schema';
-import { StepProgress } from './step-progress';
-import { InspirationStep } from './inspiration-step';
 import { BookingStep } from './booking-step';
 import { Confirmation } from './confirmation';
 
