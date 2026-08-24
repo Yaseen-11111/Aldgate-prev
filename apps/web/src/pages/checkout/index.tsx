@@ -57,15 +57,8 @@ export default function Checkout() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {step === 1 && (
-            <InspirationStep items={items} onContinue={() => setStep(2)} />
-          )}
-          {step === 2 && (
-            <>
-              <BookingStep form={form} onBack={() => setStep(1)} isSubmitting={createRequest.isPending} />
-              {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
-            </>
-          )}
+          <BookingStep form={form} onBack={() => setStep(1)} isSubmitting={createRequest.isPending} />
+          {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
         </form>
       </Form>
     </div>
