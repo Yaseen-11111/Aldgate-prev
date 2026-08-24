@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { checkoutFormSchema, checkoutFormDefaults, type CheckoutFormValues } from './schema';
-import { StepProgress } from './step-progress';
 import { BookingStep } from './booking-step';
 import { Confirmation } from './confirmation';
 
@@ -49,7 +48,7 @@ export default function Checkout() {
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-4xl min-h-[80vh]">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <BookingStep form={form} isSubmitting={createRequest.isPending} />
+          <BookingStep onBack=() form={form} isSubmitting={createRequest.isPending} />
           {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
         </form>
       </Form>
