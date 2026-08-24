@@ -12,7 +12,6 @@ import { Confirmation } from './confirmation';
 /** Two-step checkout flow: review shortlist, then book a free home appointment. */
 export default function Checkout() {
   const { items, clear } = useQuoteStore();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const createRequest = useCreateQuoteRequest();
 
@@ -37,18 +36,14 @@ export default function Checkout() {
       },
     }, {
       onSuccess: () => {
-        setStep(3);
         clear();
+        return <Confirmation />;
       },
       onError: (error) => {
         setSubmissionError(error instanceof Error ? error.message : 'Unable to confirm your appointment. Please try again.');
       },
     });
   };
-
-  if (step === 3) {
-    return <Confirmation />;
-  }
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-4xl min-h-[80vh]">
