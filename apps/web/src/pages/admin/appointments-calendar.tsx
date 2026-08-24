@@ -1,10 +1,10 @@
-import { useListQuoteRequests } from '@workspace/api-client-react';
+import { useAdminQuoteRequests } from '@/hooks/use-admin-quote-requests';
 
 const timeWindows = ['Morning (9am - 12pm)', 'Afternoon (12pm - 4pm)', 'Evening (4pm - 7pm)'];
 
 /** A compact operational calendar for appointment slots requested by customers. */
 export function AppointmentsCalendar() {
-  const { data: requests = [], isLoading } = useListQuoteRequests();
+  const { data: requests = [], isLoading, error, refetch } = useAdminQuoteRequests();
   const activeRequests = requests.filter((request) => request.status !== 'completed');
   const byDate = new Map<string, typeof activeRequests>();
 
@@ -21,7 +21,7 @@ export function AppointmentsCalendar() {
         <h2 className="text-2xl font-serif">Appointment calendar</h2>
         <p className="text-sm text-muted-foreground mt-1">Active customer appointments grouped by requested date and time. Completed requests are excluded.</p>
       </div>
-      {isLoading ? <div className="h-52 bg-muted animate-pulse" /> : days.length === 0 ? (
+      {isLoading ? <div className="h-52 bg-muted animate-pulse" /> : error ? <div className="border border-destructive/30 bg-destructive/5 p-6 text-destructive">Unable to load appointments. <button type="button" onClick={() => void refetch()} className="underline font-medium">Try again</button></div> : days.length === 0 ? (
         <div className="border border-border bg-white p-12 text-center text-muted-foreground">No active appointments scheduled.</div>
       ) : (
         <div className="space-y-5">

@@ -5,7 +5,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   QuoteRequest,
   QuoteRequestStatus,
-  useListQuoteRequests,
   useUpdateQuoteRequest,
   useDeleteQuoteRequest,
   getListQuoteRequestsQueryKey,
@@ -17,12 +16,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { requestEditSchema, type RequestEditFormValues } from './schemas';
+import { useAdminQuoteRequests } from '@/hooks/use-admin-quote-requests';
 
 /** Admin list of consultation (quote) requests with inline edit and delete. */
 export function QuoteRequestsList() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data: requests, isLoading } = useListQuoteRequests();
+  const { data: requests, isLoading, error, refetch } = useAdminQuoteRequests();
   const updateRequest = useUpdateQuoteRequest();
   const deleteRequest = useDeleteQuoteRequest();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -78,6 +78,10 @@ export function QuoteRequestsList() {
         {[...Array(3)].map((_, i) => <div key={i} className="h-32 bg-muted animate-pulse"></div>)}
       </div>
     );
+  }
+
+  if (error) {
+    return <div className="border border-destructive/30 bg-destructive/5 p-6 text-destructive">Unable to load consultation requests. <button type="button" onClick={() => void refetch()} className="underline font-medium">Try again</button></div>;
   }
 
   return (

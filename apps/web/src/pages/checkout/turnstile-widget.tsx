@@ -9,11 +9,14 @@ type TurnstileOptions = {
   theme: 'light' | 'dark' | 'auto';
   callback: (token: string) => void;
   'expired-callback': () => void;
-  'error-callback': () => void;
+  retry?: 'auto' | 'never';
+  'refresh-expired'?: 'auto' | 'manual' | 'never';
+  'error-callback': (errorCode?: string) => void;
 };
 
 type TurnstileApi = {
   render: (container: HTMLElement, options: TurnstileOptions) => string;
+  ready: (callback: () => void) => void;
   reset: (widgetId: string) => void;
   remove: (widgetId: string) => void;
 };
@@ -27,23 +30,50 @@ declare global {
 let loadPromise: Promise<void> | null = null;
 
 function loadTurnstile(): Promise<void> {
-  if (window.turnstile) return Promise.resolve();
+  if (window.turnstile) return new Promise<void>((resolve) => window.turnstile?.ready(() => resolve()));
   if (loadPromise) return loadPromise;
 
-  loadPromise = new Promise((resolve, reject) => {
+  const promise = new Promise<void>((resolve, reject) => {
     const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
     const script = existing ?? document.createElement('script');
-    const onLoad = () => window.turnstile ? resolve() : reject(new Error('Turnstile did not initialise.'));
+    let settled = false;
+    let timer: number | undefined;
+    const finish = () => {
+      if (settled || !window.turnstile) return;
+      settled = true;
+      if (timer !== undefined) window.clearInterval(timer);
+      window.turnstile.ready(() => resolve());
+    };
+    const fail = (reason: Error) => {
+      if (settled) return;
+      settled = true;
+      if (timer !== undefined) window.clearInterval(timer);
+      reject(reason);
+    };
+    const onLoad = () => {
+      finish();
+    };
+    if (window.turnstile) {
+      finish();
+      return;
+    }
     script.addEventListener('load', onLoad, { once: true });
-    script.addEventListener('error', () => reject(new Error('Turnstile could not load.')), { once: true });
+    script.addEventListener('error', () => fail(new Error('Turnstile could not load.')), { once: true });
     if (!existing) {
       script.id = scriptId;
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       document.head.appendChild(script);
     }
+    // A route change can mount after api.js has already fired its load event.
+    timer = window.setInterval(finish, 25);
+    window.setTimeout(() => fail(new Error('Turnstile did not initialise.')), 5_000);
+  }).catch((error) => {
+    loadPromise = null;
+    throw error;
   });
-  return loadPromise;
+  loadPromise = promise;
+  return promise;
 }
 
 type TurnstileWidgetProps = {
@@ -68,17 +98,24 @@ export function TurnstileWidget({ onTokenChange, resetSignal }: TurnstileWidgetP
     loadTurnstile()
       .then(() => {
         if (cancelled || !containerRef.current || !window.turnstile) return;
-        widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: siteKey,
-          action: 'consultation',
-          theme: 'light',
-          callback: (token) => onTokenChangeRef.current(token),
-          'expired-callback': () => onTokenChangeRef.current(''),
-          'error-callback': () => {
-            onTokenChangeRef.current('');
-            setLoadError('The security check failed to load. Please refresh the page and try again.');
-          },
-        });
+        try {
+          containerRef.current.replaceChildren();
+          widgetIdRef.current = window.turnstile.render(containerRef.current, {
+            sitekey: siteKey,
+            action: 'consultation',
+            theme: 'light',
+            retry: 'auto',
+            'refresh-expired': 'auto',
+            callback: (token) => { setLoadError(null); onTokenChangeRef.current(token); },
+            'expired-callback': () => onTokenChangeRef.current(''),
+            'error-callback': () => {
+              onTokenChangeRef.current('');
+              setLoadError('The security check could not complete. It will retry automatically.');
+            },
+          });
+        } catch {
+          setLoadError('The security check could not start. Please refresh the page and try again.');
+        }
       })
       .catch(() => {
         if (!cancelled) setLoadError('The security check could not load. Please refresh the page and try again.');
@@ -86,6 +123,7 @@ export function TurnstileWidget({ onTokenChange, resetSignal }: TurnstileWidgetP
     return () => {
       cancelled = true;
       if (widgetIdRef.current && window.turnstile) window.turnstile.remove(widgetIdRef.current);
+      widgetIdRef.current = null;
     };
   }, []);
 
