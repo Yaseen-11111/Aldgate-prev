@@ -14,7 +14,7 @@ export const STEPS: ProcessStep[] = [
     title: 'Free Home Consultation',
     duration: 'Day 1',
     description:
-      "An Aldergate advisor visits your home at a time that suits you. We bring physical fabric, timber, and paint samples so every colour and texture can be judged in your own light — not a showroom's.",
+      "A Pure Shade Blinds advisor visits your home at a time that suits you. We bring physical fabric, timber, and paint samples so every colour and texture can be judged in your own light — not a showroom's.",
     image: '/products/venetian-timber.jpg',
   },
   {

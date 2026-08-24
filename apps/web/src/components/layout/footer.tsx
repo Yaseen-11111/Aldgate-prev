@@ -10,7 +10,7 @@ export function Footer() {
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-2">
-            <span className="font-serif text-3xl mb-6 block">Aldergate</span>
+            <span className="font-serif text-3xl mb-6 block">Pure Shade Blinds</span>
             <p className="text-primary-foreground/70 max-w-md font-light leading-relaxed">
               Made-to-measure window dressings crafted with an architectural sensibility. 
               We bring the showroom to your home, measuring every window by hand to ensure 
@@ -48,7 +48,7 @@ export function Footer() {
         </div>
         
         <div className="border-t border-primary-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-light text-primary-foreground/40">
-          <p>&copy; {new Date().getFullYear()} Aldergate Blinds & Shades. All rights reserved. Created by Yaseen R</p>
+          <p>&copy; {new Date().getFullYear()} Pure Shade Blinds. All rights reserved. Created by Yaseen R</p>
           <div className="flex items-center gap-6">
             <a href="https://admin.pureshadeblinds.co.uk/admin" className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
           </div>

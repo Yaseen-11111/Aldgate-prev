@@ -29,6 +29,12 @@ type Env = {
   ASSETS: { fetch(request: Request): Promise<Response> };
   /** Server-only Cloudflare Turnstile secret used to verify consultation requests. */
   TURNSTILE_SECRET?: string;
+  /** Server-only Resend API key for consultation notification emails. */
+  RESEND_API_KEY?: string;
+  /** Verified Resend sender, e.g. `Aldgate <enquiries@pureshadeblinds.co.uk>`. */
+  RESEND_FROM?: string;
+  /** Inbox which receives new consultation notifications. */
+  BOOKING_NOTIFICATION_EMAIL?: string;
   /** Cloudflare Access team domain, for example `your-team.cloudflareaccess.com`. */
   CF_ACCESS_TEAM_DOMAIN?: string;
   /** Audience (AUD) copied from the Cloudflare Access application configuration. */
@@ -331,6 +337,64 @@ async function verifyTurnstile(request: Request, env: Env, token: unknown): Prom
   return null;
 }
 
+function escapeHtml(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+/** Sends the business notification after a booking is safely stored in D1. */
+async function sendBookingNotification(env: Env, booking: QuoteRequestRow): Promise<void> {
+  const apiKey = env.RESEND_API_KEY?.trim();
+  const from = env.RESEND_FROM?.trim();
+  const recipient = env.BOOKING_NOTIFICATION_EMAIL?.trim();
+  if (!apiKey || !from || !recipient) {
+    console.warn("Resend notification skipped because RESEND_API_KEY, RESEND_FROM, or BOOKING_NOTIFICATION_EMAIL is missing");
+    return;
+  }
+
+  const name = escapeHtml(booking.name);
+  const email = escapeHtml(booking.email);
+  const phone = escapeHtml(booking.phone);
+  const postcode = escapeHtml(booking.postcode);
+  const date = escapeHtml(booking.preferred_date);
+  const timeWindow = escapeHtml(booking.preferred_time_window);
+  const dimensions = booking.width_cm && booking.drop_cm ? `${booking.width_cm} cm × ${booking.drop_cm} cm` : "Not supplied";
+  const items = (JSON.parse(booking.items) as Array<{ productName: string }>).map((item) => escapeHtml(item.productName)).join(", ") || "No products selected";
+  const subject = `New consultation request from ${booking.name}`;
+  const text = [
+    `New consultation request #${booking.id}`,
+    `Name: ${booking.name}`,
+    `Email: ${booking.email}`,
+    `Phone: ${booking.phone}`,
+    `Postcode: ${booking.postcode}`,
+    `Preferred appointment: ${booking.preferred_date}, ${booking.preferred_time_window}`,
+    `Dimensions: ${dimensions}`,
+    `Products: ${(JSON.parse(booking.items) as Array<{ productName: string }>).map((item) => item.productName).join(", ") || "No products selected"}`,
+  ].join("\n");
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+        "user-agent": "Aldgate-Worker/1.0",
+        "idempotency-key": `consultation-${booking.id}-owner-notification`,
+      },
+      body: JSON.stringify({
+        from,
+        to: [recipient],
+        reply_to: booking.email,
+        subject,
+        text,
+        html: `<h1>New consultation request</h1><p><strong>Customer:</strong> ${name}</p><p><strong>Email:</strong> ${email}<br><strong>Phone:</strong> ${phone}<br><strong>Postcode:</strong> ${postcode}</p><p><strong>Preferred appointment:</strong> ${date}, ${timeWindow}<br><strong>Dimensions:</strong> ${escapeHtml(dimensions)}<br><strong>Products:</strong> ${items}</p>`,
+      }),
+    });
+    if (!response.ok) console.error("Resend notification failed", response.status);
+  } catch (exception) {
+    console.error("Resend notification request failed", exception);
+  }
+}
+
 function validId(pathname: string, prefix: string): number | null {
   const match = new RegExp(`^${prefix}/(\\d+)$`).exec(pathname);
   if (!match) return null;
@@ -514,6 +578,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const inserted = await env.DB.prepare("INSERT INTO quote_requests (items, width_cm, drop_cm, name, phone, email, postcode, preferred_date, preferred_time_window) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
       .bind(JSON.stringify(input.items), input.widthCm ?? null, input.dropCm ?? null, input.name, input.phone, input.email, input.postcode, date, input.preferredTimeWindow).run();
     const row = await env.DB.prepare("SELECT * FROM quote_requests WHERE id = ?").bind(inserted.meta?.last_row_id).first<QuoteRequestRow>();
+    if (row) await sendBookingNotification(env, row);
     return row ? json(CreateQuoteRequestResponse.parse(quoteRequestFromRow(row)), 201) : error("Quote request could not be created", 500);
   }
 

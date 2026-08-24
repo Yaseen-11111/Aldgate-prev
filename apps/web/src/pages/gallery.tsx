@@ -49,7 +49,7 @@ function GalleryCard({ item, onOpen }: { item: GalleryItem; onOpen: (index: numb
 
   return (
     <div role="button" tabIndex={0} onClick={() => onOpen(index)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(index); } }} className="group relative aspect-[4/3] overflow-hidden bg-muted text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-      <MediaPreview media={media} alt={item.description || 'Completed Aldergate project'} className="transition-transform duration-500 group-hover:scale-[1.03]" />
+      <MediaPreview media={media} alt={item.description || 'Completed Pure Shade Blinds project'} className="transition-transform duration-500 group-hover:scale-[1.03]" />
       <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none" />
       {item.media.length > 1 && <>
         <button type="button" onClick={(event) => { event.stopPropagation(); move(-1); }} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 hover:bg-white flex items-center justify-center" aria-label="Previous image or video"><ChevronLeft className="w-4 h-4" /></button>
@@ -72,7 +72,7 @@ function Lightbox({ selected, onClose, onIndexChange }: { selected: SelectedMedi
       <button type="button" className="absolute inset-0 cursor-default" aria-label="Close media viewer" onClick={onClose} />
       <div className="relative z-10 max-w-6xl max-h-full bg-background shadow-2xl flex flex-col md:flex-row overflow-auto">
         <div className="relative bg-black flex items-center justify-center min-w-0">
-          <MediaPreview media={media} alt={item.description || 'Completed Aldergate project'} className="max-h-[75vh] md:max-h-[82vh] w-auto max-w-full object-contain" controls />
+          <MediaPreview media={media} alt={item.description || 'Completed Pure Shade Blinds project'} className="max-h-[75vh] md:max-h-[82vh] w-auto max-w-full object-contain" controls />
           {item.media.length > 1 && <>
             <button type="button" onClick={() => move(-1)} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white flex items-center justify-center" aria-label="Previous image or video"><ChevronLeft className="w-5 h-5" /></button>
             <button type="button" onClick={() => move(1)} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white flex items-center justify-center" aria-label="Next image or video"><ChevronRight className="w-5 h-5" /></button>

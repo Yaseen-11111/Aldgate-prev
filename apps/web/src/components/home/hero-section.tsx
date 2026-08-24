@@ -8,7 +8,7 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0">
         <img
           src={rollerImage}
-          alt="Premium Aldergate Blinds"
+          alt="Premium Pure Shade Blinds"
           className="w-full h-full object-cover object-center opacity-40 mix-blend-multiply"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />

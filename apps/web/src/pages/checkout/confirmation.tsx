@@ -10,7 +10,7 @@ export function Confirmation() {
       </div>
       <h1 className="text-4xl md:text-5xl font-serif mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 fill-mode-both">Appointment Confirmed</h1>
       <p className="text-lg text-foreground/70 font-light mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both">
-        Thank you for choosing Aldergate. Your consultation request has been received.
+        Thank you for choosing Pure Shade Blinds. Your consultation request has been received.
         One of our expert advisors will contact you shortly to confirm your exact appointment time.
       </p>
       <Link href="/" className="inline-flex items-center justify-center h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors tracking-wide font-medium animate-in fade-in duration-700 delay-500 fill-mode-both">

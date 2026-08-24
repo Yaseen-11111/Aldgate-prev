@@ -12,7 +12,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function buildWhatsAppUrl(items: QuoteItem[] = []): string {
-  const greeting = "Hi Aldergate, I'd like to enquire about a free home measure & quote.";
+  const greeting = "Hi Pure Shade Blinds, I'd like to enquire about a free home measure & quote.";
 
   const message =
     items.length > 0

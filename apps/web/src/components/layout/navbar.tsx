@@ -41,7 +41,7 @@ export function Navbar() {
           <div className="flex items-center gap-6">
             <Link href="/" onClick={closeMenu} className="group">
               <span className="font-serif text-2xl tracking-wide group-hover:text-accent transition-colors">
-                Aldergate
+                Pure Shade Blinds
               </span>
             </Link>
             

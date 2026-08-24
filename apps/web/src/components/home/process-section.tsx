@@ -25,7 +25,7 @@ export function ProcessSection() {
     <section className="py-24 bg-white">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-serif mb-4">The Aldergate Standard</h2>
+          <h2 className="text-3xl md:text-4xl font-serif mb-4">The Pure Shade Blinds Standard</h2>
           <p className="text-foreground/70 font-light">We believe precision requires presence. That's why we never sell directly online.</p>
         </div>
 

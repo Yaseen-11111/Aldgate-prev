@@ -1,4 +1,4 @@
-# Aldergate Blinds & Shades
+# Pure Shade Blinds
 
 A premium made-to-measure blinds & shutters website built on the Hillarys service model: no prices are ever shown, customers build a shortlist and book a free in-home measure-and-quote appointment.
 
