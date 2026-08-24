@@ -11,12 +11,11 @@ import { TurnstileWidget } from './turnstile-widget';
 
 interface BookingStepProps {
   form: UseFormReturn<CheckoutFormValues>;
-  onBack: () => void;
   isSubmitting: boolean;
 }
 
 /** Step 2: contact details and preferred appointment window. */
-export function BookingStep({ form, onBack, isSubmitting }: BookingStepProps) {
+export function BookingStep({ form, isSubmitting }: BookingStepProps) {
   const preferredDate = form.watch('preferredDate');
   const preferredTimeWindow = form.watch('preferredTimeWindow');
   const availability = useQuery({
@@ -169,11 +168,13 @@ export function BookingStep({ form, onBack, isSubmitting }: BookingStepProps) {
           type="button"
           onClick={() => {
             form.setValue('turnstileToken', '');
-            onBack();
           }}
           className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Back
+
+            <a href="/" className="inline-flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" /> Back
+            </a>
         </button>
         <button
           type="submit"
