@@ -23,5 +23,6 @@ export interface QuoteRequest {
   preferredTimeWindow: string;
   status: QuoteRequestStatus;
   adminNotes: string;
+  customerMessage: string;
   createdAt: Date;
 }

@@ -1,9 +1,11 @@
 import { Link } from 'wouter';
 import { useQuoteStore } from '@/store';
-import { buildWhatsAppUrl, CONTACT_PHONE_DISPLAY } from '@/lib/whatsapp';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
 export function Footer() {
   const items = useQuoteStore((state) => state.items);
+  const { data: settings } = useSiteSettings();
 
   return (
     <footer className="bg-primary text-primary-foreground pt-16 pb-8">
@@ -12,9 +14,7 @@ export function Footer() {
           <div className="col-span-1 md:col-span-2">
             <span className="font-serif text-3xl mb-6 block">Pure Shade Blinds</span>
             <p className="text-primary-foreground/70 max-w-md font-light leading-relaxed">
-              Made-to-measure window dressings crafted with an architectural sensibility. 
-              We bring the showroom to your home, measuring every window by hand to ensure 
-              flawless execution.
+              {settings.footerDescription}
             </p>
           </div>
           
@@ -35,12 +35,12 @@ export function Footer() {
               <li><Link href="/about" className="hover:text-white transition-colors">Our Process</Link></li>
               <li>
                 <a
-                  href={buildWhatsAppUrl(items)}
+                  href={buildWhatsAppUrl(items, settings.whatsAppNumber)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
                 >
-                  WhatsApp Us ({CONTACT_PHONE_DISPLAY})
+                  WhatsApp Us ({settings.phoneDisplay})
                 </a>
               </li>
             </ul>
@@ -50,6 +50,8 @@ export function Footer() {
         <div className="border-t border-primary-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-light text-primary-foreground/40">
           <p>&copy; {new Date().getFullYear()} Pure Shade Blinds. All rights reserved. Created by Yaseen R</p>
           <div className="flex items-center gap-6">
+            {settings.instagramUrl && <a href={settings.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/80">Instagram</a>}
+            {settings.facebookUrl && <a href={settings.facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/80">Facebook</a>}
             <a href="https://admin.pureshadeblinds.co.uk/admin" className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
           </div>
         </div>

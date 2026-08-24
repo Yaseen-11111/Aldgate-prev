@@ -31,6 +31,7 @@ export type QuoteRequestRecord = {
   preferredTimeWindow: string;
   status: "pending" | "contacted" | "confirmed" | "measured" | "completed" | "cancelled";
   adminNotes: string;
+  customerMessage: string;
   createdAt: Date;
 };
 
@@ -123,6 +124,7 @@ function reviveStore(value: StoreData): StoreData {
     quoteRequests: value.quoteRequests.map((request) => ({
       ...request,
       adminNotes: request.adminNotes ?? "",
+      customerMessage: request.customerMessage ?? "",
       createdAt: new Date(request.createdAt),
       preferredDate: new Date(request.preferredDate),
     })),

@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Maximize2, Play, X } from 'lucide-react';
 import { getGallery, type GalleryItem, type GalleryMedia } from '@/lib/gallery-api';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
 type SelectedMedia = { item: GalleryItem; index: number };
 
 export default function Gallery() {
   const { data: gallery = [], isLoading } = useQuery({ queryKey: ['gallery'], queryFn: getGallery });
   const [selected, setSelected] = useState<SelectedMedia | null>(null);
+  const { data: settings } = useSiteSettings();
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -24,8 +26,8 @@ export default function Gallery() {
     <div className="container mx-auto px-4 md:px-6 py-12 md:py-20">
       <div className="mb-12 md:mb-16 border-b border-border pb-8">
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-accent mb-3">Recent projects</p>
-        <h1 className="text-4xl md:text-6xl font-serif mb-4">Our Work</h1>
-        <p className="text-foreground/70 font-light max-w-xl">A selection of blinds and shutters we have fitted in homes across the area.</p>
+        <h1 className="text-4xl md:text-6xl font-serif mb-4">{settings.galleryHeading}</h1>
+        <p className="text-foreground/70 font-light max-w-xl">{settings.galleryDescription}</p>
       </div>
 
       {isLoading ? (

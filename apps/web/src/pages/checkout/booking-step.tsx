@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CheckoutFormValues } from './schema';
 import { TurnstileWidget } from './turnstile-widget';
@@ -129,6 +130,19 @@ export function BookingStep({ form, onBack, isSubmitting }: BookingStepProps) {
                 </SelectContent>
               </Select>
               {availability.isFetching && <FormDescription>Checking available times…</FormDescription>}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="customerMessage"
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel>How can we help? <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+              <FormControl><Textarea {...field} rows={4} placeholder="Tell us about your space, what you are looking for, or any questions you have…" /></FormControl>
+              <FormDescription>You can book a consultation without selecting items.</FormDescription>
               <FormMessage />
             </FormItem>
           )}

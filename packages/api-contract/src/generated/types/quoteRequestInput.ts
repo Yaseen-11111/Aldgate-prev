@@ -9,10 +9,6 @@ import type { QuoteItem } from './quoteItem';
 
 export interface QuoteRequestInput {
   items: QuoteItem[];
-  /** @nullable */
-  widthCm?: number | null;
-  /** @nullable */
-  dropCm?: number | null;
   /** @minLength 1 */
   name: string;
   /** @minLength 1 */
@@ -29,4 +25,6 @@ export interface QuoteRequestInput {
      * @maxLength 2048
      */
   turnstileToken: string;
+  /** @maxLength 2000 */
+  customerMessage?: string;
 }

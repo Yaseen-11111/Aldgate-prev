@@ -448,10 +448,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/QuoteItem"
-        widthCm:
-          type: ["number", "null"]
-        dropCm:
-          type: ["number", "null"]
         name:
           type: string
           minLength: 1
@@ -474,6 +470,9 @@ components:
           type: string
           minLength: 1
           maxLength: 2048
+        customerMessage:
+          type: string
+          maxLength: 2000
 
     QuoteRequest:
       type: object
@@ -490,6 +489,7 @@ components:
         - preferredTimeWindow
         - status
         - adminNotes
+        - customerMessage
         - createdAt
       properties:
         id:
@@ -519,6 +519,8 @@ components:
           type: string
           enum: [pending, contacted, confirmed, measured, completed, cancelled]
         adminNotes:
+          type: string
+        customerMessage:
           type: string
         createdAt:
           type: string
@@ -555,6 +557,9 @@ components:
         adminNotes:
           type: string
           maxLength: 5000
+        customerMessage:
+          type: string
+          maxLength: 2000
 
     QuoteRequestSummary:
       type: object

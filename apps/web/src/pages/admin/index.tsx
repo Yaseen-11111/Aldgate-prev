@@ -6,8 +6,9 @@ import { QuoteRequestsList } from './quote-requests-list';
 import { GalleryManager } from './gallery-manager';
 import { AppointmentsCalendar } from './appointments-calendar';
 import { ActivityLog } from './activity-log';
+import { SiteSettingsManager } from './site-settings-manager';
 
-type AdminView = 'dashboard' | 'gallery' | 'requests' | 'calendar' | 'activity';
+type AdminView = 'dashboard' | 'gallery' | 'requests' | 'calendar' | 'activity' | 'site';
 
 const adminHost = 'admin.pureshadeblinds.co.uk';
 
@@ -72,9 +73,9 @@ export default function AdminPortal() {
           <h1 className="text-4xl font-serif mb-2">Admin Portal</h1>
           <p className="text-foreground/70 font-light">Manage catalog, gallery, and quote requests.</p>
         </div>
-          <div className="flex items-center gap-4">
+          <div className="flex w-full md:w-auto flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           {email && <span className="hidden lg:block text-xs text-muted-foreground">Signed in as {email}</span>}
-          <div className="flex p-1 bg-muted">
+          <div className="flex max-w-full overflow-x-auto p-1 bg-muted">
             <button
               onClick={() => setView('dashboard')}
               className={`px-4 py-2 text-sm font-medium transition-colors ${view === 'dashboard' ? 'bg-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
@@ -105,6 +106,12 @@ export default function AdminPortal() {
             >
               Activity
             </button>
+            <button
+              onClick={() => setView('site')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${view === 'site' ? 'bg-white shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Website
+            </button>
           </div>
           <button
             onClick={handleLogout}
@@ -130,6 +137,8 @@ export default function AdminPortal() {
         <AppointmentsCalendar />
       ) : view === 'activity' ? (
         <ActivityLog />
+      ) : view === 'site' ? (
+        <SiteSettingsManager />
       ) : (
         <QuoteRequestsList />
       )}

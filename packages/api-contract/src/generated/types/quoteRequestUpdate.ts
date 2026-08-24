@@ -26,4 +26,6 @@ export interface QuoteRequestUpdate {
   status?: QuoteRequestUpdateStatus;
   /** @maxLength 5000 */
   adminNotes?: string;
+  /** @maxLength 2000 */
+  customerMessage?: string;
 }

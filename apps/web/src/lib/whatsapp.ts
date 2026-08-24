@@ -1,8 +1,6 @@
 import type { QuoteItem } from "@workspace/api-client-react";
 
-// UK number 07850 597079 in international format for wa.me links.
-export const CONTACT_PHONE_DISPLAY = "07850 597079";
-export const CONTACT_WHATSAPP_NUMBER = "447850597079";
+// The default WhatsApp number can be changed by an administrator in Website settings.
 
 const CATEGORY_LABELS: Record<string, string> = {
   roller: "Roller Blind",
@@ -11,7 +9,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   shutter: "Shutter",
 };
 
-export function buildWhatsAppUrl(items: QuoteItem[] = []): string {
+export function buildWhatsAppUrl(items: QuoteItem[] = [], phoneNumber = "447545953546"): string {
   const greeting = "Hi Pure Shade Blinds, I'd like to enquire about a free home measure & quote.";
 
   const message =
@@ -25,5 +23,5 @@ export function buildWhatsAppUrl(items: QuoteItem[] = []): string {
       : greeting;
 
   const params = new URLSearchParams({ text: message });
-  return `https://wa.me/${CONTACT_WHATSAPP_NUMBER}?${params.toString()}`;
+  return `https://wa.me/${phoneNumber.replace(/\D/g, '')}?${params.toString()}`;
 }

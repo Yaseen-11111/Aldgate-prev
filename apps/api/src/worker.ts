@@ -78,6 +78,7 @@ type QuoteRequestRow = {
   preferred_time_window: string;
   status: "pending" | "contacted" | "confirmed" | "measured" | "completed" | "cancelled";
   admin_notes: string;
+  customer_message: string;
   created_at: string;
 };
 
@@ -98,6 +99,37 @@ type AuditEventRow = {
   target_type: string;
   target_id: number | null;
   created_at: string;
+};
+
+type SiteSettings = {
+  phoneDisplay: string;
+  whatsAppNumber: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  heroTitle: string;
+  heroDescription: string;
+  heroPrimaryLabel: string;
+  heroBookingLabel: string;
+  footerDescription: string;
+  processHeading: string;
+  processDescription: string;
+  collectionHeading: string;
+  collectionDescription: string;
+  galleryHeading: string;
+  galleryDescription: string;
+  processPageHeading: string;
+  processPageDescription: string;
+};
+
+const defaultSiteSettings: SiteSettings = {
+  phoneDisplay: "07545 953546", whatsAppNumber: "447545953546", instagramUrl: "", facebookUrl: "",
+  heroTitle: "Light, measured.", heroDescription: "We treat window dressings like architecture. Our advisors measure, craft, and fit every shade exactly to your space.",
+  heroPrimaryLabel: "Explore the Collection", heroBookingLabel: "Book a Free Consultation",
+  footerDescription: "Made-to-measure window dressings crafted with an architectural sensibility. We bring the showroom to your home and ensure flawless execution.",
+  processHeading: "The Pure Shade Blinds Standard", processDescription: "We believe precision requires presence. That's why we never sell directly online.",
+  collectionHeading: "The Collection", collectionDescription: "Explore our curated range of materials and styles. Add your inspirations to your shortlist to discuss during your home consultation.",
+  galleryHeading: "Our Work", galleryDescription: "A selection of blinds and shutters we have fitted in homes across the area.",
+  processPageHeading: "Our Process", processPageDescription: "We treat window dressings like architecture — measured, crafted, and fitted by hand. Scroll to see how a single window goes from bare glass to a finished, made-to-measure blind.",
 };
 
 const appointmentTimeWindows = ["Morning (9am - 12pm)", "Afternoon (12pm - 4pm)", "Evening (4pm - 7pm)"] as const;
@@ -190,6 +222,7 @@ function quoteRequestFromRow(row: QuoteRequestRow) {
     preferredTimeWindow: row.preferred_time_window,
     status: row.status,
     adminNotes: row.admin_notes,
+    customerMessage: row.customer_message,
     createdAt: new Date(row.created_at),
   };
 }
@@ -214,6 +247,15 @@ function isGalleryMedia(value: unknown): value is GalleryMedia[] {
 function base64UrlDecode(value: string): Uint8Array {
   const padded = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+}
+
+async function getSiteSettings(env: Env): Promise<SiteSettings> {
+  try {
+    const row = await env.DB.prepare("SELECT value FROM site_settings WHERE key = 'public'").first<{ value: string }>();
+    if (!row) return defaultSiteSettings;
+    const parsed = JSON.parse(row.value) as Partial<SiteSettings>;
+    return { ...defaultSiteSettings, ...parsed };
+  } catch { return defaultSiteSettings; }
 }
 
 function r2GalleryKey(src: string): string | null {
@@ -411,7 +453,7 @@ async function sendBookingNotification(env: Env, booking: QuoteRequestRow): Prom
   const postcode = escapeHtml(booking.postcode);
   const date = escapeHtml(booking.preferred_date);
   const timeWindow = escapeHtml(booking.preferred_time_window);
-  const dimensions = booking.width_cm && booking.drop_cm ? `${booking.width_cm} cm × ${booking.drop_cm} cm` : "Not supplied";
+  const message = escapeHtml(booking.customer_message || "No message supplied");
   const items = (JSON.parse(booking.items) as Array<{ productName: string }>).map((item) => escapeHtml(item.productName)).join(", ") || "No products selected";
   const subject = `New consultation request from ${booking.name}`;
   const text = [
@@ -421,7 +463,7 @@ async function sendBookingNotification(env: Env, booking: QuoteRequestRow): Prom
     `Phone: ${booking.phone}`,
     `Postcode: ${booking.postcode}`,
     `Preferred appointment: ${booking.preferred_date}, ${booking.preferred_time_window}`,
-    `Dimensions: ${dimensions}`,
+    `Message: ${booking.customer_message || "No message supplied"}`,
     `Products: ${(JSON.parse(booking.items) as Array<{ productName: string }>).map((item) => item.productName).join(", ") || "No products selected"}`,
   ].join("\n");
 
@@ -440,7 +482,7 @@ async function sendBookingNotification(env: Env, booking: QuoteRequestRow): Prom
         reply_to: booking.email,
         subject,
         text,
-        html: `<h1>New consultation request</h1><p><strong>Customer:</strong> ${name}</p><p><strong>Email:</strong> ${email}<br><strong>Phone:</strong> ${phone}<br><strong>Postcode:</strong> ${postcode}</p><p><strong>Preferred appointment:</strong> ${date}, ${timeWindow}<br><strong>Dimensions:</strong> ${escapeHtml(dimensions)}<br><strong>Products:</strong> ${items}</p>`,
+        html: `<h1>New consultation request</h1><p><strong>Customer:</strong> ${name}</p><p><strong>Email:</strong> ${email}<br><strong>Phone:</strong> ${phone}<br><strong>Postcode:</strong> ${postcode}</p><p><strong>Preferred appointment:</strong> ${date}, ${timeWindow}<br><strong>Products:</strong> ${items}</p><p><strong>Message:</strong><br>${message}</p>`,
       }),
     });
     if (!response.ok) console.error("Resend notification failed", response.status);
@@ -463,6 +505,22 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
   const { pathname } = url;
 
   if (request.method === "GET" && pathname === "/api/healthz") return json({ status: "ok" });
+
+  if (request.method === "GET" && pathname === "/api/site-settings") return json(await getSiteSettings(env));
+
+  if (request.method === "PATCH" && pathname === "/api/admin/site-settings") {
+    const forbidden = await requireAdmin(request, env);
+    if (forbidden) return forbidden;
+    const input = await body(request);
+    if (!input || typeof input !== "object") return error("Invalid settings", 400);
+    const allowed = Object.keys(defaultSiteSettings) as Array<keyof SiteSettings>;
+    const updates = Object.fromEntries(Object.entries(input).filter(([key, value]) => allowed.includes(key as keyof SiteSettings) && typeof value === "string" && value.length <= 2000));
+    const next = { ...(await getSiteSettings(env)), ...updates };
+    await env.DB.prepare("INSERT INTO site_settings (key, value, updated_at) VALUES ('public', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at")
+      .bind(JSON.stringify(next)).run();
+    await recordAuditEvent(request, env, "updated", "site settings", null);
+    return json(next);
+  }
 
   if (request.method === "GET" && pathname === "/sitemap.xml") {
     const result = await env.DB.prepare("SELECT id FROM products ORDER BY id ASC").all<{ id: number }>();
@@ -499,11 +557,11 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const forbidden = await requireAdmin(request, env);
     if (forbidden) return forbidden;
     const result = await env.DB.prepare("SELECT * FROM quote_requests ORDER BY created_at DESC").all<QuoteRequestRow>();
-    const heading = ["ID", "Created", "Status", "Name", "Email", "Phone", "Postcode", "Preferred date", "Preferred time", "Width cm", "Drop cm", "Products", "Admin notes"];
+    const heading = ["ID", "Created", "Status", "Name", "Email", "Phone", "Postcode", "Preferred date", "Preferred time", "Products", "Customer message", "Admin notes"];
     const rows = (result.results ?? []).map((row) => [
       row.id, row.created_at, row.status, row.name, row.email, row.phone, row.postcode, row.preferred_date,
-      row.preferred_time_window, row.width_cm ?? "", row.drop_cm ?? "",
-      (JSON.parse(row.items) as Array<{ productName: string }>).map((item) => item.productName).join("; "), row.admin_notes,
+      row.preferred_time_window,
+      (JSON.parse(row.items) as Array<{ productName: string }>).map((item) => item.productName).join("; "), row.customer_message, row.admin_notes,
     ].map(csvValue).join(","));
     return new Response([heading.map(csvValue).join(","), ...rows].join("\r\n"), {
       headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": "attachment; filename=consultations.csv" },
@@ -696,8 +754,8 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const availability = await env.DB.prepare("SELECT id FROM quote_requests WHERE preferred_date = ? AND preferred_time_window = ? AND status NOT IN ('completed', 'cancelled') LIMIT 1")
       .bind(date, input.preferredTimeWindow).first<{ id: number }>();
     if (availability) return error("That appointment slot has just been taken. Please choose another time.", 409);
-    const inserted = await env.DB.prepare("INSERT INTO quote_requests (items, width_cm, drop_cm, name, phone, email, postcode, preferred_date, preferred_time_window) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(JSON.stringify(input.items), input.widthCm ?? null, input.dropCm ?? null, input.name, input.phone, input.email, input.postcode, date, input.preferredTimeWindow).run();
+    const inserted = await env.DB.prepare("INSERT INTO quote_requests (items, width_cm, drop_cm, name, phone, email, postcode, preferred_date, preferred_time_window, customer_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(JSON.stringify(input.items), null, null, input.name, input.phone, input.email, input.postcode, date, input.preferredTimeWindow, input.customerMessage ?? "").run();
     const row = await env.DB.prepare("SELECT * FROM quote_requests WHERE id = ?").bind(inserted.meta?.last_row_id).first<QuoteRequestRow>();
     if (row) await sendBookingNotification(env, row);
     return row ? json(CreateQuoteRequestResponse.parse(quoteRequestFromRow(row)), 201) : error("Quote request could not be created", 500);
@@ -744,7 +802,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     const fields = [
       ["name", parsed.data.name], ["phone", parsed.data.phone], ["email", parsed.data.email], ["postcode", parsed.data.postcode],
       ["preferred_date", parsed.data.preferredDate === undefined ? undefined : parsed.data.preferredDate.toISOString().slice(0, 10)],
-      ["preferred_time_window", parsed.data.preferredTimeWindow], ["width_cm", parsed.data.widthCm], ["drop_cm", parsed.data.dropCm], ["status", parsed.data.status], ["admin_notes", parsed.data.adminNotes],
+      ["preferred_time_window", parsed.data.preferredTimeWindow], ["width_cm", parsed.data.widthCm], ["drop_cm", parsed.data.dropCm], ["status", parsed.data.status], ["admin_notes", parsed.data.adminNotes], ["customer_message", parsed.data.customerMessage],
     ].flatMap(([field, value]) => value === undefined ? [] : [[field, value] as [string, unknown]]);
     if (fields.length === 0) return error("At least one field must be provided", 400);
     const update = `UPDATE quote_requests SET ${fields.map(([field]) => `${field} = ?`).join(", ")} WHERE id = ?`;

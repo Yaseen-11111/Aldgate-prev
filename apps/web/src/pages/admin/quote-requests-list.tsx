@@ -204,25 +204,10 @@ export function QuoteRequestsList() {
                   </ul>
                 </div>
 
-                {(request.widthCm || request.dropCm) && (
-                  <div>
-                    <h4 className="text-sm font-medium tracking-wide uppercase mb-4">Preliminary Measurements</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      {request.widthCm && (
-                        <div className="p-4 bg-muted/30 text-center">
-                          <p className="text-xs text-muted-foreground uppercase mb-1">Rough Width</p>
-                          <p className="text-lg font-medium">{request.widthCm} cm</p>
-                        </div>
-                      )}
-                      {request.dropCm && (
-                        <div className="p-4 bg-muted/30 text-center">
-                          <p className="text-xs text-muted-foreground uppercase mb-1">Rough Drop</p>
-                          <p className="text-lg font-medium">{request.dropCm} cm</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <h4 className="text-sm font-medium tracking-wide uppercase mb-4">Customer message</h4>
+                  <p className="p-4 bg-muted/30 text-sm text-foreground/75 whitespace-pre-wrap">{request.customerMessage || 'No message supplied.'}</p>
+                </div>
               </div>
             </div>
           ))}

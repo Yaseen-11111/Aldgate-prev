@@ -67,10 +67,6 @@ export interface QuoteItem {
 
 export interface QuoteRequestInput {
   items: QuoteItem[];
-  /** @nullable */
-  widthCm?: number | null;
-  /** @nullable */
-  dropCm?: number | null;
   /** @minLength 1 */
   name: string;
   /** @minLength 1 */
@@ -87,6 +83,8 @@ export interface QuoteRequestInput {
      * @maxLength 2048
      */
   turnstileToken: string;
+  /** @maxLength 2000 */
+  customerMessage?: string;
 }
 
 export type QuoteRequestStatus = typeof QuoteRequestStatus[keyof typeof QuoteRequestStatus];
@@ -116,6 +114,7 @@ export interface QuoteRequest {
   preferredTimeWindow: string;
   status: QuoteRequestStatus;
   adminNotes: string;
+  customerMessage: string;
   createdAt: string;
 }
 
@@ -150,6 +149,8 @@ export interface QuoteRequestUpdate {
   status?: QuoteRequestUpdateStatus;
   /** @maxLength 5000 */
   adminNotes?: string;
+  /** @maxLength 2000 */
+  customerMessage?: string;
 }
 
 export interface QuoteRequestSummary {

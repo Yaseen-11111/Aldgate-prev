@@ -8,8 +8,7 @@ export const checkoutFormSchema = z.object({
   preferredDate: z.string().min(1, 'Please select a preferred date'),
   preferredTimeWindow: z.string().min(1, 'Please select a time window'),
   turnstileToken: z.string().min(1, 'Please complete the security check'),
-  widthCm: z.union([z.number(), z.nan()]).optional(),
-  dropCm: z.union([z.number(), z.nan()]).optional(),
+  customerMessage: z.string().max(2000, 'Message must be 2,000 characters or fewer'),
 });
 
 export type CheckoutFormValues = z.infer<typeof checkoutFormSchema>;
@@ -22,6 +21,5 @@ export const checkoutFormDefaults: CheckoutFormValues = {
   preferredDate: '',
   preferredTimeWindow: '',
   turnstileToken: '',
-  widthCm: undefined,
-  dropCm: undefined,
+  customerMessage: '',
 };

@@ -9,7 +9,6 @@ import { StepProgress } from './step-progress';
 import { InspirationStep } from './inspiration-step';
 import { BookingStep } from './booking-step';
 import { Confirmation } from './confirmation';
-import { EmptyShortlist } from './empty-shortlist';
 
 /** Two-step checkout flow: review shortlist, then book a free home appointment. */
 export default function Checkout() {
@@ -35,8 +34,7 @@ export default function Checkout() {
         preferredDate: data.preferredDate,
         preferredTimeWindow: data.preferredTimeWindow,
         turnstileToken: data.turnstileToken,
-        widthCm: isNaN(data.widthCm as number) ? null : data.widthCm,
-        dropCm: isNaN(data.dropCm as number) ? null : data.dropCm,
+        customerMessage: data.customerMessage || undefined,
       },
     }, {
       onSuccess: () => {
@@ -49,10 +47,6 @@ export default function Checkout() {
     });
   };
 
-  if (items.length === 0 && step !== 3) {
-    return <EmptyShortlist />;
-  }
-
   if (step === 3) {
     return <Confirmation />;
   }
@@ -64,7 +58,7 @@ export default function Checkout() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {step === 1 && (
-            <InspirationStep form={form} items={items} onContinue={() => setStep(2)} />
+            <InspirationStep items={items} onContinue={() => setStep(2)} />
           )}
           {step === 2 && (
             <>

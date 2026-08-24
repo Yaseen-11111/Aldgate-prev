@@ -5,6 +5,7 @@ import { CategoryFilter } from '@/components/catalog/category-filter';
 import { ProductCard } from '@/components/catalog/product-card';
 import { CatalogGridSkeleton } from '@/components/catalog/catalog-grid-skeleton';
 import { EmptyCatalog } from '@/components/catalog/empty-catalog';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
 export default function Catalog() {
   const searchString = useSearch();
@@ -15,6 +16,7 @@ export default function Catalog() {
     categoryParam ? { category: categoryParam } : undefined,
   );
   const { items, addItem } = useQuoteStore();
+  const { data: settings } = useSiteSettings();
 
   const handleAddToQuote = (product: Product) => {
     addItem({
@@ -28,9 +30,9 @@ export default function Catalog() {
     <div className="py-12 md:py-20 container mx-auto px-4 md:px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 border-b border-border pb-8">
         <div>
-          <h1 className="text-4xl md:text-6xl font-serif mb-4">The Collection</h1>
+          <h1 className="text-4xl md:text-6xl font-serif mb-4">{settings.collectionHeading}</h1>
           <p className="text-foreground/70 font-light max-w-xl">
-            Explore our curated range of materials and styles. Add your inspirations to your shortlist to discuss during your home consultation.
+            {settings.collectionDescription}
           </p>
         </div>
 

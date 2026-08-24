@@ -21,12 +21,13 @@ const STEPS = [
 
 /** Three-step "how it works" summary on the homepage. */
 export function ProcessSection() {
+  const { data: settings } = useSiteSettings();
   return (
     <section className="py-24 bg-white">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-serif mb-4">The Pure Shade Blinds Standard</h2>
-          <p className="text-foreground/70 font-light">We believe precision requires presence. That's why we never sell directly online.</p>
+          <h2 className="text-3xl md:text-4xl font-serif mb-4">{settings.processHeading}</h2>
+          <p className="text-foreground/70 font-light">{settings.processDescription}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -42,3 +43,4 @@ export function ProcessSection() {
     </section>
   );
 }
+import { useSiteSettings } from '@/hooks/use-site-settings';

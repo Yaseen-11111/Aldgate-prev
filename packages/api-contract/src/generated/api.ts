@@ -160,6 +160,7 @@ export const ListQuoteRequestsResponseItem = zod.object({
   "preferredTimeWindow": zod.string(),
   "status": zod.enum(['pending', 'contacted', 'confirmed', 'measured', 'completed', 'cancelled']),
   "adminNotes": zod.string(),
+  "customerMessage": zod.string(),
   "createdAt": zod.coerce.date()
 })
 export const ListQuoteRequestsResponse = zod.array(ListQuoteRequestsResponseItem)
@@ -175,6 +176,8 @@ export const ListQuoteRequestsResponse = zod.array(ListQuoteRequestsResponseItem
 
 export const createQuoteRequestBodyTurnstileTokenMax = 2048;
 
+export const createQuoteRequestBodyCustomerMessageMax = 2000;
+
 
 
 export const CreateQuoteRequestBody = zod.object({
@@ -183,15 +186,14 @@ export const CreateQuoteRequestBody = zod.object({
   "productName": zod.string(),
   "category": zod.enum(['roller', 'venetian', 'roman', 'shutter'])
 })),
-  "widthCm": zod.number().nullish(),
-  "dropCm": zod.number().nullish(),
   "name": zod.string().min(1),
   "phone": zod.string().min(1),
   "email": zod.string().min(1),
   "postcode": zod.string().min(1),
   "preferredDate": zod.coerce.date(),
   "preferredTimeWindow": zod.string().min(1),
-  "turnstileToken": zod.string().min(1).max(createQuoteRequestBodyTurnstileTokenMax)
+  "turnstileToken": zod.string().min(1).max(createQuoteRequestBodyTurnstileTokenMax),
+  "customerMessage": zod.string().max(createQuoteRequestBodyCustomerMessageMax).optional()
 })
 
 export const CreateQuoteRequestResponse = zod.object({
@@ -211,6 +213,7 @@ export const CreateQuoteRequestResponse = zod.object({
   "preferredTimeWindow": zod.string(),
   "status": zod.enum(['pending', 'contacted', 'confirmed', 'measured', 'completed', 'cancelled']),
   "adminNotes": zod.string(),
+  "customerMessage": zod.string(),
   "createdAt": zod.coerce.date()
 })
 
@@ -239,6 +242,7 @@ export const GetQuoteRequestResponse = zod.object({
   "preferredTimeWindow": zod.string(),
   "status": zod.enum(['pending', 'contacted', 'confirmed', 'measured', 'completed', 'cancelled']),
   "adminNotes": zod.string(),
+  "customerMessage": zod.string(),
   "createdAt": zod.coerce.date()
 })
 
@@ -257,6 +261,8 @@ export const UpdateQuoteRequestParams = zod.object({
 
 export const updateQuoteRequestBodyAdminNotesMax = 5000;
 
+export const updateQuoteRequestBodyCustomerMessageMax = 2000;
+
 
 
 export const UpdateQuoteRequestBody = zod.object({
@@ -269,7 +275,8 @@ export const UpdateQuoteRequestBody = zod.object({
   "widthCm": zod.number().nullish(),
   "dropCm": zod.number().nullish(),
   "status": zod.enum(['pending', 'contacted', 'confirmed', 'measured', 'completed', 'cancelled']).optional(),
-  "adminNotes": zod.string().max(updateQuoteRequestBodyAdminNotesMax).optional()
+  "adminNotes": zod.string().max(updateQuoteRequestBodyAdminNotesMax).optional(),
+  "customerMessage": zod.string().max(updateQuoteRequestBodyCustomerMessageMax).optional()
 })
 
 export const UpdateQuoteRequestResponse = zod.object({
@@ -289,6 +296,7 @@ export const UpdateQuoteRequestResponse = zod.object({
   "preferredTimeWindow": zod.string(),
   "status": zod.enum(['pending', 'contacted', 'confirmed', 'measured', 'completed', 'cancelled']),
   "adminNotes": zod.string(),
+  "customerMessage": zod.string(),
   "createdAt": zod.coerce.date()
 })
 

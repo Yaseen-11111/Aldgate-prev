@@ -37,15 +37,15 @@ export function Navbar() {
             : 'bg-transparent border-transparent'
         }`}
       >
-        <div className="container mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="container mx-auto px-4 md:px-6 h-16 md:h-20 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 lg:gap-6">
             <Link href="/" onClick={closeMenu} className="group">
-              <span className="font-serif text-2xl tracking-wide group-hover:text-accent transition-colors">
+              <span className="font-serif text-xl sm:text-2xl whitespace-nowrap tracking-wide group-hover:text-accent transition-colors">
                 Pure Shade Blinds
               </span>
             </Link>
             
-            <nav className="hidden md:flex items-center gap-8 ml-8">
+            <nav className="hidden lg:flex items-center gap-4 xl:gap-8 ml-4 xl:ml-8">
               <Link href="/catalog" className={`text-sm font-medium tracking-wide hover:text-accent transition-colors ${location.startsWith('/catalog') ? 'text-accent' : 'text-foreground/80'}`}>
                 Collection
               </Link>
@@ -58,14 +58,17 @@ export function Navbar() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             {isAdmin && (
-              <Link href="/admin" className="hidden sm:inline-flex text-sm font-medium tracking-wide text-foreground/80 hover:text-accent transition-colors" onClick={closeMenu}>
+              <Link href="/admin" className="hidden lg:inline-flex text-sm font-medium tracking-wide text-foreground/80 hover:text-accent transition-colors" onClick={closeMenu}>
                 Dashboard
               </Link>
             )}
+            <Link href="/checkout" className="hidden lg:inline-flex h-11 items-center bg-primary px-4 text-sm font-medium tracking-wide text-primary-foreground hover:bg-primary/90 transition-colors" onClick={closeMenu}>
+              Book a consultation
+            </Link>
             <Link href="/quote" className="group flex items-center gap-2" onClick={closeMenu}>
-              <span className="text-sm font-medium tracking-wide hidden sm:inline-block group-hover:text-accent transition-colors">
+              <span className="text-sm font-medium tracking-wide hidden xl:inline-block group-hover:text-accent transition-colors">
                 Consultation
               </span>
               <div className="relative flex items-center justify-center w-10 h-10 rounded-full border border-border group-hover:border-accent group-hover:bg-accent/5 transition-all">
@@ -74,7 +77,7 @@ export function Navbar() {
             </Link>
 
             <button 
-              className="md:hidden p-2 -mr-2 text-foreground"
+              className="lg:hidden p-2 -mr-2 text-foreground"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -85,17 +88,20 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       <div 
-        className={`fixed inset-0 z-40 bg-background transition-transform duration-500 ease-in-out md:hidden ${
+        className={`fixed inset-0 z-40 bg-background transition-transform duration-500 ease-in-out lg:hidden ${
           mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="pt-24 px-6 flex flex-col h-full">
+        <div className="pt-24 px-6 pb-8 flex flex-col h-full overflow-y-auto">
           <nav className="flex flex-col gap-6 text-2xl font-serif mt-8">
             <Link href="/" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
               Home <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </Link>
             <Link href="/catalog" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
               Collection <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </Link>
+            <Link href="/about" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
+              Our Process <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </Link>
             <Link href="/gallery" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
               Gallery <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -108,10 +114,8 @@ export function Navbar() {
                 Dashboard <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </Link>
             )}
-            <a href="https://admin.pureshadeblinds.co.uk/admin" className="flex items-center justify-between border-b border-border pb-4" onClick={closeMenu}>
-              Admin Login <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </a>
           </nav>
+          <Link href="/checkout" className="mt-8 h-14 bg-primary text-primary-foreground flex items-center justify-center font-medium tracking-wide" onClick={closeMenu}>Book a free consultation</Link>
         </div>
       </div>
     </>
