@@ -14,7 +14,7 @@ export default function NotFound() {
           </div>
 
           <p className="mt-4 text-sm text-gray-600">
-            Did you forget to add the page to the router?
+            That goes no where, try another link or contact the team if theres an error.
           </p>
         </CardContent>
       </Card>
