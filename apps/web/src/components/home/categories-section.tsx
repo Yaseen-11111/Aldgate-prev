@@ -15,10 +15,13 @@ const CATEGORIES = [
 /** Homepage category tiles linking into the filtered catalog. */
 export function CategoriesSection() {
   return (
-    <section className="py-24">
+    <section className="py-24 pt-0">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-end mb-16">
           <h2 className="text-4xl md:text-5xl font-serif">Categories</h2>
+          <Link href="/about" className="inline-flex items-center gap-2 text-sm font-medium tracking-wide hover:text-accent transition-colors">
+            Explore the process <ArrowRight className="w-4 h-4" />
+          </Link>
           <Link href="/catalog" className="hidden md:flex items-center gap-2 text-sm font-medium tracking-wide hover:text-accent transition-colors">
             View All <ArrowRight className="w-4 h-4" />
           </Link>
