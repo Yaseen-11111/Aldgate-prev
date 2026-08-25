@@ -39,7 +39,7 @@ export function HeroSection() {
             <Link
                 href="/checkout"
                 className="inline-flex items-center justify-center h-14 px-8
-                bg-[#B46A3C] hover:bg-[#9E5B32] text-white border border-[#B46A3C] transition-colors tracking-wide font-medium"
+                bg-[#B46A3C] hover:bg-[#B87A3E] text-white border border-[#B46A3C] transition-colors tracking-wide font-medium"
             >
               {settings.heroBookingLabel}
             </Link>

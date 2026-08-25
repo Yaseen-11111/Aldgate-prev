@@ -13,7 +13,7 @@ export function EmptyQuote() {
         You can book a free consultation with or without a shortlist. Tell us what you need and we will guide you from there.
       </p>
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Link href="/checkout" className="inline-flex items-center justify-center h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors tracking-wide font-medium">Book a Free Consultation</Link>
+        <Link href="/checkout" className="inline-flex items-center justify-center h-14 px-8 text-primary-foreground bg-[#B46A3C] hover:bg-[#B87A3E] transition-colors tracking-wide font-medium">Book a Free Consultation</Link>
         <Link href="/catalog" className="inline-flex items-center justify-center h-14 px-8 border border-primary text-primary hover:bg-primary/5 transition-colors tracking-wide font-medium">Explore the Collection</Link>
       </div>
     </div>

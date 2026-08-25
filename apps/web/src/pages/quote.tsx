@@ -49,7 +49,7 @@ export default function Quote() {
             Book a free home appointment now. Add styles to your shortlist if helpful, or send a message and we will recommend the right options.
           </p>
 
-          <Link href="/checkout" className="w-full h-14 bg-primary text-primary-foreground flex items-center justify-center gap-3 font-medium hover:bg-primary/90 transition-colors mb-4">
+          <Link href="/checkout" className="w-full h-14 bg-[#B46A3C] hover:bg-[#B87A3E] text-primary-foreground flex items-center justify-center gap-3 font-medium transition-colors mb-4">
             Book Free Home Appointment <ArrowRight className="w-4 h-4" />
           </Link>
 
