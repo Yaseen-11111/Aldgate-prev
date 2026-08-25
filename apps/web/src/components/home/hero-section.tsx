@@ -28,7 +28,7 @@ export function HeroSection() {
             <Link href="/catalog" className="inline-flex items-center justify-center h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors tracking-wide font-medium">
               {settings.heroPrimaryLabel}
             </Link>
-            <Link href="/quote" className="inline-flex items-center justify-center h-14 px-8 border border-primary text-primary hover:bg-primary/5 transition-colors tracking-wide font-medium">
+            <Link href="/checkout" className="inline-flex items-center justify-center h-14 px-8 border border-primary text-primary hover:bg-primary/5 transition-colors tracking-wide font-medium">
               {settings.heroBookingLabel}
             </Link>
           </div>
