@@ -58,8 +58,8 @@ export const DoubleLoopShutterScrollbar: React.FC = () => {
             cancelAnimationFrame(physicsRef.current.animFrame);
         }
 
-        physicsRef.current.offset = 8;
-        setRecoilOffset(8);
+        physicsRef.current.offset = 6;
+        setRecoilOffset(6);
 
         scrollToRatio(e.clientY);
     };
@@ -70,7 +70,7 @@ export const DoubleLoopShutterScrollbar: React.FC = () => {
                 const deltaY = e.clientY - lastYRef.current;
                 lastYRef.current = e.clientY;
 
-                const tension = Math.min(22, Math.max(-22, physicsRef.current.offset + deltaY * 0.35));
+                const tension = Math.min(16, Math.max(-16, physicsRef.current.offset + deltaY * 0.35));
                 physicsRef.current.offset = tension;
                 setRecoilOffset(tension);
 
@@ -83,7 +83,7 @@ export const DoubleLoopShutterScrollbar: React.FC = () => {
             setIsDragging(false);
 
             let offset = physicsRef.current.offset;
-            let velocity = offset > 0 ? -10 : 10;
+            let velocity = offset > 0 ? -8 : 8;
             const stiffness = 0.18;
             const damping = 0.75;
 
@@ -121,10 +121,12 @@ export const DoubleLoopShutterScrollbar: React.FC = () => {
         <div
             ref={trackRef}
             onMouseDown={handleMouseDown}
-            className="fixed right-3 top-12 bottom-12 w-10 hidden md:flex flex-col items-center z-50 cursor-pointer select-none group"
+            className={`fixed right-3 top-12 bottom-12 w-7 hidden md:flex flex-col items-center z-50 cursor-pointer select-none group transition-opacity duration-300 ${
+                isDragging ? 'opacity-100' : 'opacity-50 hover:opacity-100'
+            }`}
         >
-            {/* Top Headrail Mounting Bracket */}
-            <svg width="40" height="14" viewBox="0 0 40 14" className="flex-shrink-0">
+            {/* Top Headrail Mounting Bracket (30% Smaller) */}
+            <svg width="28" height="10" viewBox="0 0 40 14" className="flex-shrink-0">
                 <rect x="4" y="0" width="32" height="8" rx="2" fill="#334155" />
                 <rect x="6" y="2" width="28" height="4" rx="1" fill="#64748b" />
                 <circle cx="12" cy="11" r="2.5" fill="#475569" />
@@ -143,32 +145,32 @@ export const DoubleLoopShutterScrollbar: React.FC = () => {
                             <stop offset="100%" stopColor="#94a3b8" />
                         </radialGradient>
 
-                        {/* Unified 40px-wide Pattern (No horizontal bleed or repeating overflow) */}
-                        <pattern id="doubleBeadPattern" width="40" height="10" patternUnits="userSpaceOnUse">
-                            {/* Left Strand (Front Pull Chain) */}
-                            <line x1="12" y1="0" x2="12" y2="10" stroke="#cbd5e1" strokeWidth="1.5" />
-                            <circle cx="12" cy="5" r="3" fill="url(#whiteBead)" stroke="#94a3b8" strokeWidth="0.5" />
+                        {/* Scaled-down 28px-wide Pattern */}
+                        <pattern id="doubleBeadPattern" width="28" height="7" patternUnits="userSpaceOnUse">
+                            {/* Left Strand */}
+                            <line x1="8" y1="0" x2="8" y2="7" stroke="#cbd5e1" strokeWidth="1" />
+                            <circle cx="8" cy="3.5" r="2.1" fill="url(#whiteBead)" stroke="#94a3b8" strokeWidth="0.4" />
 
-                            {/* Right Strand (Back Return Chain) */}
-                            <line x1="28" y1="0" x2="28" y2="10" stroke="#94a3b8" strokeWidth="1" />
-                            <circle cx="28" cy="5" r="2.8" fill="url(#whiteBead)" opacity="0.85" />
+                            {/* Right Strand */}
+                            <line x1="20" y1="0" x2="20" y2="7" stroke="#94a3b8" strokeWidth="0.8" />
+                            <circle cx="20" cy="3.5" r="2" fill="url(#whiteBead)" opacity="0.85" />
                         </pattern>
                     </defs>
 
-                    {/* Render Single Pattern Rect across full container */}
+                    {/* Render Pattern */}
                     <rect x="0" y="0" width="100%" height="100%" fill="url(#doubleBeadPattern)" />
                 </svg>
 
-                {/* Blind Pull Tassel / Bell Handle */}
+                {/* Blind Pull Tassel / Bell Handle (30% Smaller) */}
                 <div
-                    className="absolute left-[12px] flex flex-col items-center justify-center group-hover:scale-105"
+                    className="absolute left-[8px] flex flex-col items-center justify-center group-hover:scale-105"
                     style={{
                         top: `${scrollProgress}%`,
                         transform: `translate(-50%, ${recoilOffset}px) scale(${isDragging ? 1.12 : 1})`,
                         transition: isDragging ? 'transform 0.05s ease-out' : 'none',
                     }}
                 >
-                    <svg width="22" height="34" viewBox="0 0 22 34">
+                    <svg width="15" height="24" viewBox="0 0 22 34">
                         <defs>
                             <linearGradient id="tasselGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" stopColor="#f8fafc" />
@@ -178,18 +180,15 @@ export const DoubleLoopShutterScrollbar: React.FC = () => {
                             </linearGradient>
                         </defs>
 
-                        {/* String knot hole at top */}
                         <rect x="9.5" y="0" width="3" height="4" fill="#64748b" rx="1" />
-                        {/* Top Collar Ring */}
                         <path d="M 6 4 L 16 4 C 17 4, 17 7, 16 7 L 6 7 C 5 7, 5 4, 6 4 Z" fill="url(#tasselGrad)" stroke="#cbd5e1" strokeWidth="0.5" />
-                        {/* Main Bell Body */}
                         <path d="M 6 7 C 8 10, 3 20, 3 25 C 3 30, 7 32, 11 32 C 15 32, 19 30, 19 25 C 19 20, 14 10, 16 7 Z" fill="url(#tasselGrad)" stroke="#cbd5e1" strokeWidth="0.5" />
                     </svg>
                 </div>
             </div>
 
-            {/* Bottom Wall Safety Tension Bracket */}
-            <svg width="40" height="16" viewBox="0 0 40 16" className="flex-shrink-0">
+            {/* Bottom Wall Safety Bracket (30% Smaller) */}
+            <svg width="28" height="11" viewBox="0 0 40 16" className="flex-shrink-0">
                 <rect x="10" y="0" width="20" height="12" rx="2" fill="#ffffff" fillOpacity="0.4" stroke="#94a3b8" strokeWidth="1" />
                 <circle cx="20" cy="6" r="3" fill="#cbd5e1" stroke="#64748b" strokeWidth="1" />
             </svg>

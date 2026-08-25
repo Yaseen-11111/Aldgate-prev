@@ -64,7 +64,7 @@ export function Navbar() {
                 Dashboard
               </Link>
             )}
-            <Link href="/checkout" className="hidden lg:inline-flex h-11 items-center bg-primary px-4 text-sm font-medium tracking-wide text-primary-foreground hover:bg-primary/90 transition-colors" onClick={closeMenu}>
+            <Link href="/checkout" className="hidden lg:inline-flex h-11 items-center px-4 text-sm font-medium tracking-wide text-primary-foreground bg-[#B46A3C] hover:bg-primary/90 transition-colors" onClick={closeMenu}>
               Book a consultation
             </Link>
             <Link href="/quote" className="group flex items-center gap-2" onClick={closeMenu}>
