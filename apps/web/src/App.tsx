@@ -15,6 +15,7 @@ const AdminPortal = lazy(() => import('@/pages/admin'));
 const Process = lazy(() => import('@/pages/process'));
 const Gallery = lazy(() => import('@/pages/gallery'));
 const NotFound = lazy(() => import('@/pages/not-found'));
+import { DoubleLoopShutterScrollbar } from '@/components/DoubleLoopShutterScrollbar';
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <Seo />
+          <DoubleLoopShutterScrollbar />
           <Router />
         </WouterRouter>
         <Toaster />
