@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
-import rollerImage from '@assets/generated_images/roller-blinds.jpg';
 import { useSiteSettings } from '@/hooks/use-site-settings';
+
+const heroImage = '/products/roller-blinds.jpg';
 
 /** Full-bleed homepage hero with the two primary calls to action. */
 export function HeroSection() {
@@ -9,9 +10,14 @@ export function HeroSection() {
     <section className="relative min-h-[90vh] flex flex-col justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img
-          src={rollerImage}
+          src={heroImage}
           alt="Premium Pure Shade Blinds"
           className="w-full h-full object-cover object-center opacity-40 mix-blend-multiply"
+          width={1024}
+          height={1024}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
         />
         <div
             className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
