@@ -18,6 +18,7 @@ interface BookingStepProps {
 export function BookingStep({ form, isSubmitting }: BookingStepProps) {
   const preferredDate = form.watch('preferredDate');
   const preferredTimeWindow = form.watch('preferredTimeWindow');
+  const turnstileToken = form.watch('turnstileToken');
   const availability = useQuery({
     queryKey: ['appointment-availability', preferredDate],
     enabled: /^\d{4}-\d{2}-\d{2}$/.test(preferredDate),
@@ -178,11 +179,11 @@ export function BookingStep({ form, isSubmitting }: BookingStepProps) {
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !turnstileToken}
           className="h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors tracking-wide font-medium flex items-center gap-3 disabled:opacity-70"
         >
           {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-          Confirm Appointment
+          {isSubmitting ? 'Confirming Appointment…' : turnstileToken ? 'Confirm Appointment' : 'Complete Security Check'}
         </button>
       </div>
     </div>

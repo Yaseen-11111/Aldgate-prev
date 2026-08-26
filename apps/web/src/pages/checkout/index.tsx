@@ -12,6 +12,7 @@ import { Confirmation } from './confirmation';
 export default function Checkout() {
   const { items, clear } = useQuoteStore();
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isConfirmed, setIsConfirmed] = useState(false);
   const createRequest = useCreateQuoteRequest();
 
   const form = useForm<CheckoutFormValues>({
@@ -36,13 +37,15 @@ export default function Checkout() {
     }, {
       onSuccess: () => {
         clear();
-        return <Confirmation />;
+        setIsConfirmed(true);
       },
       onError: (error) => {
         setSubmissionError(error instanceof Error ? error.message : 'Unable to confirm your appointment. Please try again.');
       },
     });
   };
+
+  if (isConfirmed) return <Confirmation />;
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-4xl min-h-[80vh]">
