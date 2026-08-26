@@ -17,6 +17,12 @@ export function ProcessCta() {
         >
           Explore the Collection <ArrowRight className="w-4 h-4" />
         </Link>
+        <Link
+            href="/gallery"
+            className="inline-flex items-center gap-3 h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium tracking-wide"
+        >
+          Explore the our work <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
     </div>
   );
