@@ -528,12 +528,13 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     return json(next);
   }
 
-  if (request.method === "GET" && pathname === "/sitemap.xml") {
+  if ((request.method === "GET" || request.method === "HEAD") && pathname === "/sitemap.xml") {
     const result = await env.DB.prepare("SELECT id FROM products ORDER BY id ASC").all<{ id: number }>();
-    const origin = url.origin;
+    // Keep sitemap URLs stable even if a crawler reaches the www hostname.
+    const origin = "https://pureshadeblinds.co.uk";
     const pages = ["/", "/catalog", "/about", "/gallery", ...((result.results ?? []).map((product) => `/catalog/${product.id}`))];
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map((path) => `<url><loc>${origin}${path}</loc></url>`).join("")}</urlset>`;
-    return new Response(xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
+    return new Response(request.method === "HEAD" ? null : xml, { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" } });
   }
 
   if (request.method === "GET" && pathname === "/api/admin/me") {
