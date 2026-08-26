@@ -833,7 +833,16 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
-      const pathname = new URL(request.url).pathname;
+      const url = new URL(request.url);
+      // Use one public hostname so crawlers do not index duplicate www and apex pages.
+      if (url.hostname.toLowerCase() === "www.pureshadeblinds.co.uk") {
+        url.hostname = "pureshadeblinds.co.uk";
+        const redirect = Response.redirect(url.toString(), 301);
+        const headers = new Headers(redirect.headers);
+        for (const [name, value] of Object.entries(securityHeaders)) headers.set(name, value);
+        return new Response(null, { status: redirect.status, headers });
+      }
+      const { pathname } = url;
       const response = pathname.startsWith("/api/") || pathname === "/sitemap.xml"
         ? await handleApi(request, env)
         : await env.ASSETS.fetch(request);
