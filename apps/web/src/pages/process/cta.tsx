@@ -13,15 +13,15 @@ export function ProcessCta() {
         </p>
         <Link
           href="/catalog"
-          className="inline-flex items-center gap-3 h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium tracking-wide"
+          className="mt-5 mb-5 ml-5 mr-5 inline-flex items-center gap-3 h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium tracking-wide"
         >
           Explore the Collection <ArrowRight className="w-4 h-4" />
         </Link>
         <Link
             href="/gallery"
-            className="inline-flex items-center gap-3 h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium tracking-wide"
+            className="mt-5 mb-5 ml-5 mr-5 inline-flex items-center gap-3 h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium tracking-wide"
         >
-          Explore the our work <ArrowRight className="w-4 h-4" />
+          Explore  our work <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     </div>
