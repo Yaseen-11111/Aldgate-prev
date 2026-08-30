@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { requestEditSchema, type RequestEditFormValues } from './schemas';
 import { useAdminQuoteRequests } from '@/hooks/use-admin-quote-requests';
 import { useSearch } from '@/hooks/use-search';
+import { SearchBar } from '@/pages/process/search-bar';
 
 /** Admin list of consultation (quote) requests with inline edit, delete, and search. */
 export function QuoteRequestsList() {
@@ -98,18 +99,18 @@ export function QuoteRequestsList() {
           <h2 className="text-2xl font-serif">Consultation Requests</h2>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                  type="text"
-                  placeholder="Search by name, email, postcode..."
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h2 className="text-2xl font-serif">Catalog Inventory</h2>
+
+              <SearchBar
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                  onChange={setSearchQuery}
+                  placeholder="Search by name, email, postcode..."
               />
             </div>
-            <a href="/api/admin/quote-requests.csv" className="inline-flex h-10 items-center justify-center gap-2 border border-border bg-white px-4 text-sm font-medium hover:bg-muted shrink-0">
-              <Download className="w-4 h-4" /> Export CSV
+            <a href="/api/admin/quote-requests.csv"
+               className="inline-flex h-10 items-center justify-center gap-2 border border-border bg-white px-4 text-sm font-medium hover:bg-muted shrink-0">
+              <Download className="w-4 h-4"/> Export CSV
             </a>
           </div>
         </div>

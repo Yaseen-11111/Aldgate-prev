@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearch } from '@/hooks/use-search.ts';
+import { SearchBar } from '@/pages/process/search-bar';
 
 import {
   ProductCategory,
@@ -185,15 +186,13 @@ export function ProductManager() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-serif">Catalog Inventory</h2>
 
-          {/* Search Bar UI */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-                type="text"
-                placeholder="Search products..."
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-2xl font-serif">Catalog Inventory</h2>
+
+            <SearchBar
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-transparent border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                onChange={setSearchQuery}
+                placeholder="Search products..."
             />
           </div>
         </div>
