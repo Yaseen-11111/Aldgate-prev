@@ -28,7 +28,7 @@ export function Footer() {
 
             <div>
               <h4 className="font-medium tracking-wider text-sm mb-6 uppercase text-primary-foreground/50">Collection</h4>
-              <ul>
+              <ul className="space-y-4 font-light text-primary-foreground/80">
                 <li>
                   <Link to="/catalog?category=roller" onClick={scrollToTop}
                         className="hover:text-white transition-colors">
