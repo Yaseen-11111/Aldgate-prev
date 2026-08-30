@@ -14,7 +14,7 @@ import {
   useDeleteProduct,
   getListProductsQueryKey,
 } from '@workspace/api-client-react';
-import { Loader2, PackagePlus, Trash2, Plus, Pencil, Save, X } from 'lucide-react';
+import { Loader2, PackagePlus, Trash2, Plus, Pencil, Save, X, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -54,7 +54,7 @@ export function ProductManager() {
   });
 
   const invalidateProducts = () =>
-      queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
 
   const onSubmit = (data: ProductFormValues) => {
     const payload = {
@@ -114,76 +114,78 @@ export function ProductManager() {
   const isPending = createProduct.isPending || updateProduct.isPending;
 
   return (
-      <div className="space-y-12">
-        <div className="bg-white border border-border p-8 shadow-sm transition-all duration-300">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <PackagePlus className={`w-5 h-5 ${editingId ? 'text-blue-500' : 'text-accent'}`} />
-              <h2 className="text-xl font-medium">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-            </div>
-            {editingId && (
-                <button onClick={cancelEdit} className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm">
-                  <X className="w-4 h-4" /> Cancel Edit
-                </button>
-            )}
+    <div className="space-y-12">
+      <div className="bg-white border border-border p-8 shadow-sm transition-all duration-300">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <PackagePlus className={`w-5 h-5 ${editingId ? 'text-blue-500' : 'text-accent'}`} />
+            <h2 className="text-xl font-medium">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
           </div>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-
-                <FormField control={form.control} name="category" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value={ProductCategory.roller}>Roller Blinds</SelectItem>
-                          <SelectItem value={ProductCategory.venetian}>Venetian Blinds</SelectItem>
-                          <SelectItem value={ProductCategory.roman}>Roman Blinds</SelectItem>
-                          <SelectItem value={ProductCategory.shutter}>Plantation Shutters</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                )} />
-
-                <FormField control={form.control} name="materials" render={({ field }) => (
-                    <FormItem><FormLabel>Materials summary</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-
-                <FormField control={form.control} name="fabricOptions" render={({ field }) => (
-                    <FormItem><FormLabel>Fabric Options (comma separated)</FormLabel><FormControl><Input {...field} placeholder="Linen, Cotton, Blackout..." /></FormControl><FormMessage /></FormItem>
-                )} />
-              </div>
-
-              {/* Drag-and-drop / Gallery image component */}
-              <FormField control={form.control} name="images" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product Photos</FormLabel>
-                    <FormControl>
-                      <ImagesField value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-              )} />
-
-              <FormField control={form.control} name="description" render={({ field }) => (
-                  <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="resize-none" rows={4} {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-
-              <button type="submit" disabled={isPending} className={`h-12 px-8 font-medium flex items-center gap-2 transition-colors text-white ${editingId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-primary hover:bg-primary/90'}`}>
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {editingId ? 'Save Changes' : 'Create Product'}
-              </button>
-            </form>
-          </Form>
+          {editingId && (
+            <button onClick={cancelEdit} className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm">
+              <X className="w-4 h-4" /> Cancel Edit
+            </button>
+          )}
         </div>
 
-        <div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+
+              <FormField control={form.control} name="category" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value={ProductCategory.roller}>Roller Blinds</SelectItem>
+                      <SelectItem value={ProductCategory.venetian}>Venetian Blinds</SelectItem>
+                      <SelectItem value={ProductCategory.roman}>Roman Blinds</SelectItem>
+                      <SelectItem value={ProductCategory.shutter}>Plantation Shutters</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="materials" render={({ field }) => (
+                <FormItem><FormLabel>Materials summary</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+
+              <FormField control={form.control} name="fabricOptions" render={({ field }) => (
+                <FormItem><FormLabel>Fabric Options (comma separated)</FormLabel><FormControl><Input {...field} placeholder="Linen, Cotton, Blackout..." /></FormControl><FormMessage /></FormItem>
+              )} />
+            </div>
+
+            <FormField control={form.control} name="images" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Product Photos</FormLabel>
+                <FormControl>
+                  <ImagesField value={field.value} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="resize-none" rows={4} {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+
+            <button type="submit" disabled={isPending} className={`h-12 px-8 font-medium flex items-center gap-2 transition-colors text-white ${editingId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-primary hover:bg-primary/90'}`}>
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {editingId ? 'Save Changes' : 'Create Product'}
+            </button>
+          </form>
+        </Form>
+      </div>
+
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-2xl font-serif">Catalog Inventory</h2>
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-2xl font-serif">Catalog Inventory</h2>
 
@@ -193,51 +195,52 @@ export function ProductManager() {
                 placeholder="Search products..."
             />
           </div>
+        </div>
 
-          {isLoading ? (
-              <div className="h-32 bg-muted animate-pulse"></div>
-          ) : (
-              <div className="bg-white border border-border divide-y divide-border">
-                {filteredProducts.map((product) => (
-                    <div key={product.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-muted overflow-hidden shrink-0">
-                          <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{product.name}</p>
-                          <p className="text-xs text-muted-foreground uppercase mt-0.5">{product.category}</p>
-                        </div>
+        {isLoading ? (
+            <div className="h-32 bg-muted animate-pulse"></div>
+        ) : (
+            <div className="bg-white border border-border divide-y divide-border">
+              {/* Map over filteredProducts instead of products */}
+              {filteredProducts.map((product) => (
+                  <div key={product.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-muted overflow-hidden shrink-0">
+                        <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => handleEdit(product)}
-                            className="p-2 text-muted-foreground hover:text-blue-500 transition-colors"
-                            aria-label="Edit product"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => handleDelete(product.id)}
-                            disabled={deleteProduct.isPending}
-                            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                            aria-label="Delete product"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div>
+                        <p className="font-medium text-sm">{product.name}</p>
+                        <p className="text-xs text-muted-foreground uppercase mt-0.5">{product.category}</p>
                       </div>
                     </div>
-                ))}
+                    <div className="flex items-center gap-2">
+                      <button
+                          onClick={() => handleEdit(product)}
+                          className="p-2 text-muted-foreground hover:text-blue-500 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                          onClick={() => handleDelete(product.id)}
+                          disabled={deleteProduct.isPending}
+                          className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+              ))}
 
-                {products?.length === 0 && (
-                    <div className="p-8 text-center text-muted-foreground">No products in catalog.</div>
-                )}
-                {products?.length !== 0 && filteredProducts.length === 0 && (
-                    <div className="p-8 text-center text-muted-foreground">No results found for "{searchQuery}".</div>
-                )}
-              </div>
-          )}
-        </div>
+              {/* Empty States */}
+              {products?.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground">No products in catalog.</div>
+              )}
+              {products?.length !== 0 && filteredProducts.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground">No results found for "{searchQuery}".</div>
+              )}
+            </div>
+        )}
       </div>
+    </div>
   );
 }
