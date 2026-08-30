@@ -5,6 +5,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { Layout } from '@/components/layout';
 import { Seo } from '@/components/seo';
+import { ScrollToTop } from './pages/process/scroll-too-top.tsx';
+
 
 const Home = lazy(() => import('@/pages/home'));
 const Catalog = lazy(() => import('@/pages/catalog'));
@@ -15,7 +17,7 @@ const AdminPortal = lazy(() => import('@/pages/admin'));
 const Process = lazy(() => import('@/pages/process'));
 const Gallery = lazy(() => import('@/pages/gallery'));
 const NotFound = lazy(() => import('@/pages/not-found'));
-import { DoubleLoopShutterScrollbar } from '@/components/DoubleLoopShutterScrollbar';
+import { DoubleLoopShutterScrollbar } from '@/components/double-loop-shutter-scrollbar.tsx';
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <Seo />
+          <ScrollToTop />
           <DoubleLoopShutterScrollbar />
           <Router />
         </WouterRouter>

@@ -25,10 +25,14 @@ export function Footer() {
             <div>
               <h4 className="font-medium tracking-wider text-sm mb-6 uppercase text-primary-foreground/50">Collection</h4>
               <ul className="space-y-4 font-light text-primary-foreground/80">
-                <li><Link href="/catalog?category=roller" className="hover:text-white transition-colors">Roller Blinds</Link></li>
-                <li><Link href="/catalog?category=venetian" className="hover:text-white transition-colors">Venetian Blinds</Link></li>
-                <li><Link href="/catalog?category=roman" className="hover:text-white transition-colors">Roman Blinds</Link></li>
-                <li><Link href="/catalog?category=shutter" className="hover:text-white transition-colors">Plantation Shutters</Link></li>
+                <li><Link to="/catalog?category=roller" className="hover:text-white transition-colors">Roller
+                  Blinds</Link></li>
+                <li><Link to="/catalog?category=venetian" className="hover:text-white transition-colors">Venetian
+                  Blinds</Link></li>
+                <li><Link to="/catalog?category=roman" className="hover:text-white transition-colors">Roman
+                  Blinds</Link></li>
+                <li><Link to="/catalog?category=shutter" className="hover:text-white transition-colors">Plantation
+                  Shutters</Link></li>
               </ul>
             </div>
 
@@ -51,11 +55,14 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="border-t border-primary-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-light text-primary-foreground/40">
+          <div
+              className="border-t border-primary-foreground/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-light text-primary-foreground/40">
             <p>&copy; {new Date().getFullYear()} Pure Shade Blinds. All rights reserved. Created by Yaseen R</p>
             <div className="flex items-center gap-6">
-              {settings?.instagramUrl && <a href={settings.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/80">Instagram</a>}
-              {settings?.facebookUrl && <a href={settings.facebookUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary-foreground/80">Facebook</a>}
+              {settings?.instagramUrl && <a href={settings.instagramUrl} target="_blank" rel="noopener noreferrer"
+                                            className="hover:text-primary-foreground/80">Instagram</a>}
+              {settings?.facebookUrl && <a href={settings.facebookUrl} target="_blank" rel="noopener noreferrer"
+                                           className="hover:text-primary-foreground/80">Facebook</a>}
               <a href="https://admin.pureshadeblinds.co.uk/admin" className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
             </div>
           </div>
