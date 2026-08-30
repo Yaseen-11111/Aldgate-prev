@@ -25,7 +25,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { productSchema, type ProductFormValues } from './schemas';
-import { MediaDropzone } from './MediaDropzone';
+import { MediaDropzone } from './media-dropzone.tsx';
 
 const EMPTY_PRODUCT: ProductFormValues = {
     name: '',
