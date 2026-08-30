@@ -11,6 +11,10 @@ export function Footer() {
   const phoneDisplay = settings?.phoneDisplay ?? 'Contact Us';
   const whatsAppUrl = whatsAppNumber ? buildWhatsAppUrl(items, whatsAppNumber) : '#';
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
       <footer className="bg-primary text-primary-foreground pt-16 pb-8">
         <div className="container mx-auto px-4 md:px-6">
@@ -24,15 +28,31 @@ export function Footer() {
 
             <div>
               <h4 className="font-medium tracking-wider text-sm mb-6 uppercase text-primary-foreground/50">Collection</h4>
-              <ul className="space-y-4 font-light text-primary-foreground/80">
-                <li><Link to="/catalog?category=roller" className="hover:text-white transition-colors">Roller
-                  Blinds</Link></li>
-                <li><Link to="/catalog?category=venetian" className="hover:text-white transition-colors">Venetian
-                  Blinds</Link></li>
-                <li><Link to="/catalog?category=roman" className="hover:text-white transition-colors">Roman
-                  Blinds</Link></li>
-                <li><Link to="/catalog?category=shutter" className="hover:text-white transition-colors">Plantation
-                  Shutters</Link></li>
+              <ul>
+                <li>
+                  <Link to="/catalog?category=roller" onClick={scrollToTop}
+                        className="hover:text-white transition-colors">
+                    Roller Blinds
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/catalog?category=venetian" onClick={scrollToTop}
+                        className="hover:text-white transition-colors">
+                    Venetian Blinds
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/catalog?category=roman" onClick={scrollToTop}
+                        className="hover:text-white transition-colors">
+                    Roman Blinds
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/catalog?category=shutter" onClick={scrollToTop}
+                        className="hover:text-white transition-colors">
+                    Plantation Shutters
+                  </Link>
+                </li>
               </ul>
             </div>
 
