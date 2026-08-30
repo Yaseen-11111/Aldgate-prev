@@ -5,7 +5,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { Layout } from '@/components/layout';
 import { Seo } from '@/components/seo';
-import { ScrollToTop } from './pages/process/scroll-too-top.tsx';
 
 
 const Home = lazy(() => import('@/pages/home'));
@@ -47,7 +46,6 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <Seo />
-          <ScrollToTop />
           <DoubleLoopShutterScrollbar />
           <Router />
         </WouterRouter>
