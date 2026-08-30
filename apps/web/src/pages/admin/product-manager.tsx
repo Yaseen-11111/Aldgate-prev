@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearch } from '@/hooks/use-search.ts';
+
 import {
   ProductCategory,
   Product,
@@ -11,7 +13,7 @@ import {
   useDeleteProduct,
   getListProductsQueryKey,
 } from '@workspace/api-client-react';
-import { Loader2, PackagePlus, Trash2, Plus, Pencil, Save, X } from 'lucide-react';
+import { Loader2, PackagePlus, Trash2, Plus, Pencil, Save, X, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -37,6 +39,11 @@ export function ProductManager() {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+
+  const { searchQuery, setSearchQuery, filteredItems: filteredProducts } = useSearch(
+      products,
+      ['name', 'category']
+  );
 
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -175,43 +182,64 @@ export function ProductManager() {
       </div>
 
       <div>
-        <h2 className="text-2xl font-serif mb-6">Catalog Inventory</h2>
-        {isLoading ? (
-          <div className="h-32 bg-muted animate-pulse"></div>
-        ) : (
-          <div className="bg-white border border-border divide-y divide-border">
-            {products?.map((product) => (
-              <div key={product.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-muted overflow-hidden shrink-0">
-                    <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{product.name}</p>
-                    <p className="text-xs text-muted-foreground uppercase mt-0.5">{product.category}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="p-2 text-muted-foreground hover:text-blue-500 transition-colors"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(product.id)}
-                    disabled={deleteProduct.isPending}
-                    className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-            {products?.length === 0 && (
-              <div className="p-8 text-center text-muted-foreground">No products in catalog.</div>
-            )}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 className="text-2xl font-serif">Catalog Inventory</h2>
+
+          {/* Search Bar UI */}
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm bg-transparent border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+            />
           </div>
+        </div>
+
+        {isLoading ? (
+            <div className="h-32 bg-muted animate-pulse"></div>
+        ) : (
+            <div className="bg-white border border-border divide-y divide-border">
+              {/* Map over filteredProducts instead of products */}
+              {filteredProducts.map((product) => (
+                  <div key={product.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-muted overflow-hidden shrink-0">
+                        <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{product.name}</p>
+                        <p className="text-xs text-muted-foreground uppercase mt-0.5">{product.category}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                          onClick={() => handleEdit(product)}
+                          className="p-2 text-muted-foreground hover:text-blue-500 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                          onClick={() => handleDelete(product.id)}
+                          disabled={deleteProduct.isPending}
+                          className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+              ))}
+
+              {/* Empty States */}
+              {products?.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground">No products in catalog.</div>
+              )}
+              {products?.length !== 0 && filteredProducts.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground">No results found for "{searchQuery}".</div>
+              )}
+            </div>
         )}
       </div>
     </div>
