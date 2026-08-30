@@ -29,6 +29,9 @@ export const DoubleLoopShutterScrollbar: React.FC = () => {
         physicsRef.current.velocity = 0;
         setRecoilOffset(0);
 
+        // Force window scroll position to the top on route/search changes
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
         const timer = setTimeout(() => {
             updateScroll();
         }, 0);
