@@ -102,6 +102,16 @@ type AuditEventRow = {
 };
 
 type SiteSettings = {
+  categoriesHeading: string;
+  categoryRollerLabel: string;
+  categoryRollerImage: string;
+  categoryVenetianLabel: string;
+  categoryVenetianImage: string;
+  categoryRomanLabel: string;
+  categoryRomanImage: string;
+  categoryShutterLabel: string;
+  categoryShutterImage: string;
+
   processStep1Title: string;
   processStep1Duration: string;
   processStep1Description: string;
@@ -145,6 +155,16 @@ type SiteSettings = {
 };
 
 const defaultSiteSettings: SiteSettings = {
+  categoriesHeading: "Categories",
+  categoryRollerLabel: "Roller Blinds",
+  categoryRollerImage: "",
+  categoryVenetianLabel: "Venetian Blinds",
+  categoryVenetianImage: "",
+  categoryRomanLabel: "Roman Blinds",
+  categoryRomanImage: "",
+  categoryShutterLabel: "Plantation Shutters",
+  categoryShutterImage: "",
+
   processStep1Title: "Free Home Consultation",
   processStep1Duration: "Day 1",
   processStep1Description: "A Pure Shade Blinds advisor visits your home at a time that suits you. We bring physical fabric, timber, and paint samples so every colour and texture can be judged in your own light — not a showroom's.",

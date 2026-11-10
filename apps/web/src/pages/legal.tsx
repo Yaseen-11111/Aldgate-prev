@@ -1,6 +1,12 @@
+import { useEffect } from "react";
 import { Link } from "wouter";
 
 export default function Legal() {
+  useEffect(() => {
+    const scrollToSection = () => document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
+    const frame = requestAnimationFrame(scrollToSection);
+    return () => cancelAnimationFrame(frame);
+  }, []);
   return (
     <article className="container mx-auto max-w-4xl px-4 py-12 md:py-16">
       <p className="text-sm uppercase tracking-widest text-accent">
@@ -11,7 +17,7 @@ export default function Legal() {
         Last updated: 10 November 2026
       </p>
       <div className="prose prose-neutral mt-10 max-w-none prose-headings:font-serif prose-a:text-accent">
-        <h2>Using this website</h2>
+        <h2 id="website-terms" className="scroll-mt-28">Terms of use</h2>
         <p>
           This website provides information about made-to-measure blinds and
           shutters, lets you save a shortlist, and lets you request a home
@@ -33,7 +39,7 @@ export default function Legal() {
           cannot legally be excluded under UK law.
         </p>
 
-        <h2>Consultation requests</h2>
+        <h2 id="consultation-terms" className="scroll-mt-28">Terms &amp; conditions for consultation requests</h2>
         <p>
           When you submit a consultation request, we use the details you provide
           to review the request, check the preferred appointment window, contact
@@ -42,7 +48,7 @@ export default function Legal() {
           sensitive personal information in the optional message.
         </p>
 
-        <h2>Privacy notice</h2>
+        <h2 id="privacy-notice" className="scroll-mt-28">Privacy notice</h2>
         <h3>Information we collect</h3>
         <p>
           For a consultation request, we collect your name, phone number, email

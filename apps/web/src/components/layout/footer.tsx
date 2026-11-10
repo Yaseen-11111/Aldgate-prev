@@ -19,7 +19,7 @@ export function Footer() {
   return (
       <footer className="bg-primary text-primary-foreground pt-16 pb-8">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
             <div className="col-span-1 md:col-span-2">
               <span className="font-serif text-3xl mb-6 block">Pure Shade Blinds</span>
               <p className="text-primary-foreground/70 max-w-md font-light leading-relaxed min-h-[3em]">
@@ -75,6 +75,14 @@ export function Footer() {
                 </li>
               </ul>
             </div>
+            <div>
+              <h4 className="font-medium tracking-wider text-sm mb-6 uppercase text-primary-foreground/50">Legal</h4>
+              <ul className="space-y-4 font-light text-primary-foreground/80">
+                <li><a href="/terms#website-terms" className="hover:text-white transition-colors">Terms of Use</a></li>
+                <li><a href="/terms#consultation-terms" className="hover:text-white transition-colors">Terms &amp; Conditions</a></li>
+                <li><a href="/privacy#privacy-notice" className="hover:text-white transition-colors">Privacy Notice</a></li>
+              </ul>
+            </div>
           </div>
 
           <div
@@ -86,7 +94,6 @@ export function Footer() {
               {settings?.facebookUrl && <a href={settings.facebookUrl} target="_blank" rel="noopener noreferrer"
                                            className="hover:text-primary-foreground/80">Facebook</a>}
               <a href={import.meta.env.DEV && import.meta.env.MODE === 'preview-local' ? '/admin' : 'https://admin.pureshadeblinds.co.uk/admin'} className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
-              <Link href="/terms" className="hover:text-primary-foreground/80 transition-colors">Terms &amp; Privacy</Link>
             </div>
           </div>
         </div>

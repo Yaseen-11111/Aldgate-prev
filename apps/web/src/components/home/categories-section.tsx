@@ -1,3 +1,6 @@
+import { useSiteSettings, type SiteSettings } from '@/hooks/use-site-settings';
+import { EditableText } from '@/components/inline-editor';
+import { InlineRecordEditor } from '@/components/inline-record-editor';
 import { Link } from 'wouter';
 import { ArrowRight } from 'lucide-react';
 import rollerImage from '@assets/generated_images/roller-blinds.jpg';
@@ -14,11 +17,18 @@ const CATEGORIES = [
 
 /** Homepage category tiles linking into the filtered catalog. */
 export function CategoriesSection() {
+  const { data: settings } = useSiteSettings();
+  const categories = CATEGORIES.map(category => {
+    const prefix = `category${category.slug[0].toUpperCase()}${category.slug.slice(1)}`;
+    const labelKey = `${prefix}Label` as keyof SiteSettings;
+    const imageKey = `${prefix}Image` as keyof SiteSettings;
+    return { ...category, labelKey, imageKey, label: settings[labelKey], image: settings[imageKey] || category.image };
+  });
   return (
     <section className="py-24 pt-0">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-end mb-16">
-          <h2 className="text-4xl md:text-5xl font-serif">Categories</h2>
+          <h2 className="text-4xl md:text-5xl font-serif"><EditableText field="categoriesHeading" label="categories heading" value={settings.categoriesHeading} /></h2>
           <Link href="/about" className="inline-flex items-center gap-2 text-sm font-medium tracking-wide hover:text-accent transition-colors">
             Explore the process <ArrowRight className="w-4 h-4" />
           </Link>
@@ -28,9 +38,8 @@ export function CategoriesSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {CATEGORIES.map((category) => (
-            <Link
-              key={category.slug}
+          {categories.map((category) => (
+            <div key={category.slug} className="relative"><Link
               href={`/catalog?category=${category.slug}`}
               className="group relative h-[60vh] overflow-hidden bg-muted flex items-end"
             >
@@ -42,7 +51,7 @@ export function CategoriesSection() {
                   <ArrowRight className="w-5 h-5" />
                 </span>
               </div>
-            </Link>
+            </Link><div className="absolute top-4 right-4 z-20"><InlineRecordEditor label={`${category.label} category card`} endpoint="/api/admin/site-settings" fields={[{ key: category.labelKey, label: 'Card title', value: category.label }, { key: category.imageKey, label: 'Card image', value: category.image, image: true }]} /></div></div>
           ))}
         </div>
 
