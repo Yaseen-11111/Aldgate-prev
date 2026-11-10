@@ -9,6 +9,7 @@ const pageMetadata: Array<{ matches: (path: string) => boolean; title: string; d
   { matches: (path) => path === '/gallery', title: 'Our Work Gallery | Pure Shade Blinds', description: 'See recent made-to-measure blinds and shutters completed by Pure Shade Blinds.' },
   { matches: (path) => path === '/about', title: 'Our Process | Pure Shade Blinds', description: 'From home consultation to professional fitting, discover the Pure Shade Blinds process.' },
   { matches: (path) => path === '/quote' || path === '/checkout', title: 'Book a Free Consultation | Pure Shade Blinds', description: 'Book a free home consultation for made-to-measure blinds and shutters.' },
+  { matches: (path) => path === '/terms' || path === '/privacy', title: 'Terms of Use & Privacy | Pure Shade Blinds', description: 'Website terms of use and privacy information for Pure Shade Blinds.' },
 ];
 
 export function Seo() {

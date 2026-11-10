@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { createGalleryItem, deleteGalleryItem, getGallery, reorderGalleryItems, updateGalleryItem, uploadGalleryMedia, type GalleryItem } from '@/lib/gallery-api';
 import { MediaDropzone } from './media-dropzone.tsx';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const galleryKey = ['gallery'];
 
@@ -47,13 +48,12 @@ export function GalleryManager() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('Remove this entire gallery card and all its media?')) return;
     try {
       await deleteGalleryItem(id);
       await refresh();
       toast({ title: 'Gallery card removed' });
     } catch (error) {
-      toast({ title: 'Could not remove card', description: error instanceof Error ? error.message : undefined, variant: 'destructive' });
+      throw error;
     }
   };
 
@@ -122,12 +122,14 @@ function GalleryEditorCard({
   const media = item.media[activeIndex] ?? item.media[0];
   const style = { transform: CSS.Transform.toString(transform), transition };
 
-  const save = async (data: Partial<Pick<GalleryItem, 'media' | 'description'>>) => {
+  const save = async (data: Partial<Pick<GalleryItem, 'media' | 'description'>>, notifyError = true): Promise<boolean> => {
     setSaving(true);
     try {
       await onSave(data);
+      return true;
     } catch (error) {
-      toast({ title: 'Could not save gallery card', description: error instanceof Error ? error.message : undefined, variant: 'destructive' });
+      if (notifyError) toast({ title: 'Could not save gallery card', description: error instanceof Error ? error.message : undefined, variant: 'destructive' });
+      return false;
     } finally {
       setSaving(false);
     }
@@ -144,10 +146,12 @@ function GalleryEditorCard({
   };
 
   const removeActiveMedia = async () => {
-    if (item.media.length < 2 || !confirm('Remove this item from the carousel?')) return;
+    if (item.media.length < 2) return;
     const next = item.media.filter((_, index) => index !== activeIndex);
     setActiveIndex(Math.max(0, activeIndex - 1));
-    await save({ media: next });
+    if (!(await save({ media: next }, false))) {
+      throw new Error('Could not remove the media item. Please try again.');
+    }
   };
 
   return (
@@ -161,9 +165,9 @@ function GalleryEditorCard({
           <button type="button" {...attributes} {...listeners} className="absolute top-3 left-3 w-9 h-9 bg-white/95 hover:bg-white flex items-center justify-center cursor-grab active:cursor-grabbing touch-none" aria-label="Drag to reorder">
             <GripVertical className="w-4 h-4" />
           </button>
-          <button type="button" onClick={() => { void onDelete(item.id); }} className="absolute top-3 right-3 w-9 h-9 bg-white/95 hover:text-destructive hover:bg-white flex items-center justify-center" aria-label="Delete gallery card">
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <ConfirmDialog title="Delete gallery card?" description="This permanently removes the card and all of its media." onConfirm={() => onDelete(item.id)}>
+            {(open) => <button type="button" onClick={open} className="absolute top-3 right-3 w-9 h-9 bg-white/95 hover:text-destructive hover:bg-white flex items-center justify-center" aria-label="Delete gallery card"><Trash2 className="w-4 h-4" /></button>}
+          </ConfirmDialog>
           {media?.type === 'video' && (
               <span className="absolute bottom-3 left-3 w-9 h-9 bg-white/90 flex items-center justify-center">
             <Play className="w-4 h-4 fill-current" />
@@ -205,9 +209,9 @@ function GalleryEditorCard({
                 Add media
               </button>
               {item.media.length > 1 && (
-                  <button type="button" onClick={() => { void removeActiveMedia(); }} disabled={saving} className="h-9 px-3 text-sm text-destructive border border-border hover:bg-destructive/5">
-                    Remove item
-                  </button>
+                  <ConfirmDialog title="Remove media item?" description="This removes this image or video from the gallery card." confirmLabel="Remove item" pendingLabel="Removing…" onConfirm={removeActiveMedia}>
+                    {(open) => <button type="button" onClick={open} disabled={saving} className="h-9 px-3 text-sm text-destructive border border-border hover:bg-destructive/5">Remove item</button>}
+                  </ConfirmDialog>
               )}
             </div>
           </div>

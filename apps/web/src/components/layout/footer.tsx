@@ -84,6 +84,7 @@ export function Footer() {
               {settings?.facebookUrl && <a href={settings.facebookUrl} target="_blank" rel="noopener noreferrer"
                                            className="hover:text-primary-foreground/80">Facebook</a>}
               <a href="https://admin.pureshadeblinds.co.uk/admin" className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
+              <Link href="/terms" className="hover:text-primary-foreground/80 transition-colors">Terms &amp; Privacy</Link>
             </div>
           </div>
         </div>

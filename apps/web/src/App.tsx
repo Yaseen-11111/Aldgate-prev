@@ -15,6 +15,7 @@ const Checkout = lazy(() => import('@/pages/checkout'));
 const AdminPortal = lazy(() => import('@/pages/admin'));
 const Process = lazy(() => import('@/pages/process'));
 const Gallery = lazy(() => import('@/pages/gallery'));
+const Legal = lazy(() => import('@/pages/legal'));
 const NotFound = lazy(() => import('@/pages/not-found'));
 import { DoubleLoopShutterScrollbar } from '@/components/double-loop-shutter-scrollbar.tsx';
 
@@ -33,6 +34,8 @@ function Router() {
           <Route path="/admin" component={AdminPortal} />
           <Route path="/about" component={Process} />
           <Route path="/gallery" component={Gallery} />
+          <Route path="/terms" component={Legal} />
+          <Route path="/privacy" component={Legal} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>

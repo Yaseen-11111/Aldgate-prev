@@ -19,6 +19,7 @@ import { requestEditSchema, type RequestEditFormValues } from './schemas';
 import { useAdminQuoteRequests } from '@/hooks/use-admin-quote-requests';
 import { useSearch } from '@/hooks/use-search';
 import { SearchBar } from '@/pages/process/search-bar';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 /** Admin list of consultation (quote) requests with inline edit, delete, and search. */
 export function QuoteRequestsList() {
@@ -69,15 +70,10 @@ export function QuoteRequestsList() {
     });
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Delete this consultation request? This cannot be undone.')) {
-      deleteRequest.mutate({ id }, {
-        onSuccess: () => {
-          toast({ title: 'Consultation request deleted' });
-          invalidateRequests();
-        },
-      });
-    }
+  const handleDelete = async (id: number) => {
+    await deleteRequest.mutateAsync({ id });
+    toast({ title: 'Consultation request deleted' });
+    await invalidateRequests();
   };
 
   if (isLoading) {
@@ -209,14 +205,9 @@ export function QuoteRequestsList() {
                               >
                                 <Pencil className="w-4 h-4" />
                               </button>
-                              <button
-                                  onClick={() => handleDelete(request.id)}
-                                  disabled={deleteRequest.isPending}
-                                  className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                                  aria-label="Delete request"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <ConfirmDialog title="Delete consultation request?" description="This permanently deletes the customer’s consultation request and cannot be undone." onConfirm={() => handleDelete(request.id)}>
+                                {(open) => <button type="button" onClick={open} disabled={deleteRequest.isPending} className="p-2 text-muted-foreground hover:text-destructive transition-colors" aria-label="Delete request"><Trash2 className="w-4 h-4" /></button>}
+                              </ConfirmDialog>
                             </div>
                           </div>
                         </div>

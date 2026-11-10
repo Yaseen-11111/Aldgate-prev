@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { productSchema, type ProductFormValues } from './schemas';
 import { MediaDropzone } from './media-dropzone.tsx';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const EMPTY_PRODUCT: ProductFormValues = {
     name: '',
@@ -268,18 +269,10 @@ export function ProductManager() {
         form.reset(EMPTY_PRODUCT);
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this product?')) {
-            deleteProduct.mutate(
-                { id },
-                {
-                    onSuccess: () => {
-                        toast({ title: 'Product deleted' });
-                        invalidateProducts();
-                    },
-                }
-            );
-        }
+    const handleDelete = async (id: number) => {
+        await deleteProduct.mutateAsync({ id });
+        toast({ title: 'Product deleted' });
+        await invalidateProducts();
     };
 
     const isPending = createProduct.isPending || updateProduct.isPending;
@@ -428,9 +421,9 @@ export function ProductManager() {
                                     <button onClick={() => handleEdit(product)} className="p-2 text-muted-foreground hover:text-blue-500 transition-colors">
                                         <Pencil className="w-4 h-4" />
                                     </button>
-                                    <button onClick={() => handleDelete(product.id)} disabled={deleteProduct.isPending} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    <ConfirmDialog title="Delete product?" description="This permanently removes the product from your collection." onConfirm={() => handleDelete(product.id)}>
+                                      {(open) => <button type="button" onClick={open} disabled={deleteProduct.isPending} className="p-2 text-muted-foreground hover:text-destructive transition-colors" aria-label="Delete product"><Trash2 className="w-4 h-4" /></button>}
+                                    </ConfirmDialog>
                                 </div>
                             </div>
                         ))}
