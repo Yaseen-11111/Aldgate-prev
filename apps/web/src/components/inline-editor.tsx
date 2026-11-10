@@ -69,13 +69,20 @@ export function InlineEditorProvider({ children }: { children: ReactNode }) {
 
 export function EditableText({ field, label, value, multiline = false }: { field: keyof SiteSettings; label: string; value: string; multiline?: boolean }) {
   const enabled = useInlineEditEnabled();
-  return <span className={`relative inline-block align-baseline ${enabled ? 'max-w-[calc(100%-2.5rem)]' : 'max-w-full'}`}><span>{value}</span><InlineEditButton field={field} label={label} value={value} multiline={multiline} positioned /></span>;
+  if (!enabled) return <>{value}</>;
+
+  return (
+    <span className="inline-flex max-w-full items-center align-middle">
+      <span className="min-w-0 [overflow-wrap:anywhere]">{value}</span>
+      <InlineEditButton field={field} label={label} value={value} multiline={multiline} />
+    </span>
+  );
 }
 
 export function useInlineEditEnabled() { return useContext(EditorContext).enabled; }
 
-export function InlineEditButton({ field, label, value, multiline = false, positioned = false }: { field: keyof SiteSettings; label: string; value: string; multiline?: boolean; positioned?: boolean }) {
+export function InlineEditButton({ field, label, value, multiline = false }: { field: keyof SiteSettings; label: string; value: string; multiline?: boolean }) {
   const editor = useContext(EditorContext);
   if (!editor.enabled) return null;
-  return <button type="button" onClick={() => editor.open({ key: field, label, value, multiline })} aria-label={`Edit ${label}`} className={`${positioned ? 'absolute left-full top-1/2 -translate-y-1/2' : 'align-middle'} ml-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#B46A3C] text-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}><Pencil className="h-3.5 w-3.5" /></button>;
+  return <button type="button" onClick={() => editor.open({ key: field, label, value, multiline })} aria-label={`Edit ${label}`} className="ml-2 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#B46A3C] align-middle text-white shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Pencil className="h-3.5 w-3.5" /></button>;
 }
