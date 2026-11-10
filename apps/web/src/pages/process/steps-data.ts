@@ -1,3 +1,4 @@
+import { useSiteSettings, type SiteSettings } from '@/hooks/use-site-settings';
 import { Ruler, Home, Scissors, Wrench } from 'lucide-react';
 
 export interface ProcessStep {
@@ -44,3 +45,16 @@ export const STEPS: ProcessStep[] = [
 ];
 
 export const SLAT_COUNT = 10;
+
+export function processStepField(index: number, suffix: 'Title' | 'Duration' | 'Description'): keyof SiteSettings {
+  return `processStep${index + 1}${suffix}` as keyof SiteSettings;
+}
+
+export function useProcessSteps() {
+  const { data: settings } = useSiteSettings();
+  return STEPS.map((step, index) => ({ ...step,
+    title: settings[processStepField(index, 'Title')],
+    duration: settings[processStepField(index, 'Duration')],
+    description: settings[processStepField(index, 'Description')],
+  }));
+}

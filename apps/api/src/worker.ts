@@ -102,6 +102,19 @@ type AuditEventRow = {
 };
 
 type SiteSettings = {
+  processStep1Title: string;
+  processStep1Duration: string;
+  processStep1Description: string;
+  processStep2Title: string;
+  processStep2Duration: string;
+  processStep2Description: string;
+  processStep3Title: string;
+  processStep3Duration: string;
+  processStep3Description: string;
+  processStep4Title: string;
+  processStep4Duration: string;
+  processStep4Description: string;
+
   phoneDisplay: string;
   whatsAppNumber: string;
   instagramUrl: string;
@@ -132,6 +145,19 @@ type SiteSettings = {
 };
 
 const defaultSiteSettings: SiteSettings = {
+  processStep1Title: "Free Home Consultation",
+  processStep1Duration: "Day 1",
+  processStep1Description: "A Pure Shade Blinds advisor visits your home at a time that suits you. We bring physical fabric, timber, and paint samples so every colour and texture can be judged in your own light — not a showroom's.",
+  processStep2Title: "Precision Measuring",
+  processStep2Duration: "Day 1",
+  processStep2Description: "Every window is measured to the millimetre, by hand, accounting for reveals, architraves, and any obstructions. No two windows are ever quite the same — so no two orders are ever a generic size.",
+  processStep3Title: "Custom Craft",
+  processStep3Duration: "1–3 Weeks",
+  processStep3Description: "Your chosen fabric, slat, or shutter louvre is cut and assembled to order in workshop conditions. Every headrail, chain, and bracket is prepared specifically for your window openings.",
+  processStep4Title: "Expert Fitting",
+  processStep4Duration: "Fitting Day",
+  processStep4Description: "A specialist fitter installs your finished blinds or shutters, checks operation on every window, and walks you through care and adjustment — leaving nothing for you to figure out alone.",
+
   phoneDisplay: "07545 953546", whatsAppNumber: "447545953546", instagramUrl: "", facebookUrl: "",
   heroTitle: "Light, measured.", heroDescription: "We treat window dressings like architecture. Our advisors measure, craft, and fit every shade exactly to your space.",
   heroPrimaryLabel: "Explore the Collection", heroBookingLabel: "Book a Free Consultation",
