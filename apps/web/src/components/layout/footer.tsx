@@ -2,6 +2,7 @@ import { Link } from 'wouter';
 import { useQuoteStore } from '@/store';
 import { buildWhatsAppUrl } from '@/lib/whatsapp';
 import { useSiteSettings } from '@/hooks/use-site-settings';
+import { EditableText, InlineEditButton } from '@/components/inline-editor';
 
 export function Footer() {
   const items = useQuoteStore((state) => state.items);
@@ -22,7 +23,7 @@ export function Footer() {
             <div className="col-span-1 md:col-span-2">
               <span className="font-serif text-3xl mb-6 block">Pure Shade Blinds</span>
               <p className="text-primary-foreground/70 max-w-md font-light leading-relaxed min-h-[3em]">
-                {settings?.footerDescription || 'Crafting bespoke architectural window treatments with precision measurement and custom fitting.'}
+                <EditableText field="footerDescription" label="footer description" value={settings.footerDescription} multiline />
               </p>
             </div>
 
@@ -70,6 +71,7 @@ export function Footer() {
                   >
                     WhatsApp Us ({phoneDisplay})
                   </a>
+                  <InlineEditButton field="phoneDisplay" label="displayed phone number" value={settings.phoneDisplay} />
                 </li>
               </ul>
             </div>
@@ -83,7 +85,7 @@ export function Footer() {
                                             className="hover:text-primary-foreground/80">Instagram</a>}
               {settings?.facebookUrl && <a href={settings.facebookUrl} target="_blank" rel="noopener noreferrer"
                                            className="hover:text-primary-foreground/80">Facebook</a>}
-              <a href="https://admin.pureshadeblinds.co.uk/admin" className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
+              <a href={import.meta.env.DEV && import.meta.env.MODE === 'preview-local' ? '/admin' : 'https://admin.pureshadeblinds.co.uk/admin'} className="hover:text-primary-foreground/80 transition-colors">Admin Portal</a>
               <Link href="/terms" className="hover:text-primary-foreground/80 transition-colors">Terms &amp; Privacy</Link>
             </div>
           </div>

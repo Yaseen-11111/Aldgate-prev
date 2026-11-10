@@ -1,5 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import { STEPS } from './steps-data';
+import { useSiteSettings } from '@/hooks/use-site-settings';
+import { EditableText } from '@/components/inline-editor';
 
 const REASSURANCE_POINTS = [
   'No obligation, no pushy sales — just an honest quote',
@@ -9,14 +11,13 @@ const REASSURANCE_POINTS = [
 
 /** Static recap of each step below the scroll sequence, plus trust points. */
 export function ProcessDetailGrid() {
+  const { data: settings } = useSiteSettings();
   return (
     <div className="container mx-auto px-4 md:px-6 py-20 md:py-28">
       <div className="text-center max-w-2xl mx-auto mb-16">
-        <h2 className="text-3xl md:text-4xl font-serif mb-4">Every Detail, Considered</h2>
+        <h2 className="text-3xl md:text-4xl font-serif mb-4"><EditableText field="processDetailHeading" label="process details heading" value={settings.processDetailHeading} /></h2>
         <p className="text-foreground/70 font-light leading-relaxed">
-          The Hillarys-style model exists for a reason: window dressings bought sight-unseen,
-          without a real measurement, are the single biggest cause of a disappointing fit.
-          Here's what that means for you at each stage.
+          <EditableText field="processDetailDescription" label="process details introduction" value={settings.processDetailDescription} multiline />
         </p>
       </div>
 

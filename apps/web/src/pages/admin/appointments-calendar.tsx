@@ -1,4 +1,4 @@
-import { useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,12 +31,26 @@ export function AppointmentsCalendar() {
   const [minimized, setMinimized] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const [position, setPosition] = useState<Position>({ x: 0, y: 0 });
+  const windowRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const updateRequest = useUpdateQuoteRequest();
   const { toast } = useToast();
   const activeRequests = requests.filter(
     (request) => request.status !== "completed",
   );
+  useEffect(() => {
+    if (!selected || maximized) return;
+    const keepVisible = () => {
+      const rect = windowRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setPosition(current => ({
+        x: Math.max(0, Math.min(current.x, window.innerWidth - Math.min(rect.width, window.innerWidth))),
+        y: Math.max(0, Math.min(current.y, window.innerHeight - 48)),
+      }));
+    };
+    window.addEventListener("resize", keepVisible);
+    return () => window.removeEventListener("resize", keepVisible);
+  }, [selected, maximized]);
   const byDate = new Map<string, typeof activeRequests>();
 
   for (const request of activeRequests) {
@@ -47,7 +61,7 @@ export function AppointmentsCalendar() {
   const openRequest = (request: QuoteRequest) => {
     setSelected(request);
     setNotes(request.adminNotes ?? "");
-    setPosition({ x: 0, y: 0 });
+    setPosition({ x: Math.max(12, (window.innerWidth - Math.min(760, window.innerWidth - 24)) / 2), y: Math.max(12, (window.innerHeight - Math.min(680, window.innerHeight - 24)) / 2) });
     setMinimized(false);
     setMaximized(false);
   };
@@ -81,14 +95,14 @@ export function AppointmentsCalendar() {
   };
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("button")) return;
+    if (maximized || (event.target as HTMLElement).closest("button")) return;
     const origin = { x: event.clientX, y: event.clientY };
-    const initial = { ...position };
-    const move = (moveEvent: globalThis.PointerEvent) =>
-      setPosition({
-        x: initial.x + moveEvent.clientX - origin.x,
-        y: initial.y + moveEvent.clientY - origin.y,
-      });
+    const rect = windowRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const move = (moveEvent: globalThis.PointerEvent) => setPosition({
+      x: Math.min(Math.max(0, rect.left + moveEvent.clientX - origin.x), Math.max(0, window.innerWidth - rect.width)),
+      y: Math.min(Math.max(0, rect.top + moveEvent.clientY - origin.y), Math.max(0, window.innerHeight - 48)),
+    });
     const stop = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", stop);
@@ -208,11 +222,13 @@ export function AppointmentsCalendar() {
           <DialogPrimitive.Portal>
             <DialogPrimitive.Overlay className="fixed inset-0 z-[70] bg-black/35" />
             <DialogPrimitive.Content
-              className={`fixed z-[71] flex flex-col overflow-hidden border border-border bg-background shadow-2xl ${maximized ? "inset-3" : `left-1/2 top-1/2 h-[min(680px,90vh)] w-[min(760px,94vw)] -translate-x-1/2 -translate-y-1/2 ${minimized ? "h-auto w-[min(420px,94vw)] resize-none" : "resize"}`}`}
+              ref={windowRef}
+              className={`fixed z-[71] flex flex-col overflow-hidden border border-border bg-background shadow-2xl ${maximized ? "inset-3" : minimized ? "h-auto w-[min(420px,94vw)]" : "h-[min(680px,90vh)] w-[min(760px,94vw)] resize"}`}
               style={
                 !maximized
                   ? {
-                      transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))`,
+                      left: position.x,
+                      top: position.y,
                       minWidth: 320,
                       minHeight: minimized ? undefined : 300,
                     }
@@ -242,7 +258,7 @@ export function AppointmentsCalendar() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMaximized(!maximized)}
+                    onClick={() => { setMaximized(!maximized); setMinimized(false); }}
                     aria-label={
                       maximized ? "Restore window size" : "Maximize window"
                     }

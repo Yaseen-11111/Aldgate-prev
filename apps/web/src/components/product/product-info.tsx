@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { Plus, Check, Info } from 'lucide-react';
 import { Product } from '@workspace/api-client-react';
+import { InlineRecordEditor } from '@/components/inline-record-editor';
 
 interface ProductInfoProps {
   product: Product;
@@ -18,7 +19,7 @@ export function ProductInfo({ product, isInQuote, onAddToQuote }: ProductInfoPro
         </span>
       </div>
       <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif mb-8 leading-tight">
-        {product.name}
+        {product.name}<InlineRecordEditor label={`${product.name} product`} endpoint={`/api/products/${product.id}`} fields={[{ key: 'name', label: 'Product name', value: product.name }, { key: 'description', label: 'Description', value: product.description, multiline: true }, { key: 'materials', label: 'Materials', value: product.materials }]} />
       </h1>
 
       <div className="prose prose-neutral dark:prose-invert font-light leading-relaxed mb-10 text-foreground/80">

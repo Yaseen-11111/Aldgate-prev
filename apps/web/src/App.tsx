@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import { Layout } from '@/components/layout';
 import { Seo } from '@/components/seo';
+import { InlineEditorProvider } from '@/components/inline-editor';
 
 
 const Home = lazy(() => import('@/pages/home'));
@@ -50,7 +51,7 @@ function App() {
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <Seo />
           <DoubleLoopShutterScrollbar />
-          <Router />
+          <InlineEditorProvider><Router /></InlineEditorProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

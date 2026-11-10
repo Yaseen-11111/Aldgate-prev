@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { Plus, Check } from 'lucide-react';
 import { Product } from '@workspace/api-client-react';
+import { InlineRecordEditor } from '@/components/inline-record-editor';
 
 interface ProductCardProps {
   product: Product;
@@ -22,7 +23,7 @@ export function ProductCard({ product, isInQuote, onAddToQuote, animationDelayMs
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80`; // graceful fallback if our generated ones aren't available via URL
+            (e.target as HTMLImageElement).src = '/products/roller-blinds.jpg';
           }}
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
@@ -30,9 +31,10 @@ export function ProductCard({ product, isInQuote, onAddToQuote, animationDelayMs
 
       <div className="flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
-          <Link href={`/catalog/${product.id}`} className="hover:text-accent transition-colors">
+          <div className="flex items-center min-w-0"><Link href={`/catalog/${product.id}`} className="hover:text-accent transition-colors">
             <h3 className="text-lg font-medium">{product.name}</h3>
           </Link>
+          <InlineRecordEditor label={`${product.name} product`} endpoint={`/api/products/${product.id}`} fields={[{ key: 'name', label: 'Product name', value: product.name }, { key: 'description', label: 'Description', value: product.description, multiline: true }, { key: 'materials', label: 'Materials', value: product.materials }]} /></div>
           <span className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
             {product.category}
           </span>

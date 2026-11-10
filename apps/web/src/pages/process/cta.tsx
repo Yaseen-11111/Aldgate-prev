@@ -1,15 +1,17 @@
 import { Link } from 'wouter';
 import { ArrowRight } from 'lucide-react';
+import { useSiteSettings } from '@/hooks/use-site-settings';
+import { EditableText } from '@/components/inline-editor';
 
 /** Closing call-to-action, sends visitors to the catalog. */
 export function ProcessCta() {
+  const { data: settings } = useSiteSettings();
   return (
     <div className="bg-secondary/40 border-t border-border">
       <div className="container mx-auto px-4 md:px-6 py-16 md:py-20 text-center max-w-2xl">
-        <h2 className="text-3xl md:text-4xl font-serif mb-4">Ready to start?</h2>
+        <h2 className="text-3xl md:text-4xl font-serif mb-4"><EditableText field="processCtaHeading" label="process call to action heading" value={settings.processCtaHeading} /></h2>
         <p className="text-foreground/70 font-light mb-8">
-          Browse the collection to build a shortlist, then book your free home appointment —
-          we'll bring the samples and the tape measure.
+          <EditableText field="processCtaDescription" label="process call to action text" value={settings.processCtaDescription} multiline />
         </p>
         <Link
           href="/catalog"

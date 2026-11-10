@@ -19,7 +19,7 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (window.location.hostname !== adminHost) return;
+    if (window.location.hostname !== adminHost && !(import.meta.env.DEV && import.meta.env.MODE === 'preview-local')) return;
 
     void fetch('/api/admin/me', { credentials: 'same-origin' })
       .then((response) => setIsAdmin(response.ok))

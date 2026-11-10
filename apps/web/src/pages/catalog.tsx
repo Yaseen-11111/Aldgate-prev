@@ -6,6 +6,7 @@ import { ProductCard } from '@/components/catalog/product-card';
 import { CatalogGridSkeleton } from '@/components/catalog/catalog-grid-skeleton';
 import { EmptyCatalog } from '@/components/catalog/empty-catalog';
 import { useSiteSettings } from '@/hooks/use-site-settings';
+import { EditableText } from '@/components/inline-editor';
 
 export default function Catalog() {
   const searchString = useSearch();
@@ -33,10 +34,10 @@ export default function Catalog() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 border-b border-border pb-8 min-h-[140px]">
             <div>
               <h1 className="text-4xl md:text-6xl font-serif mb-4 min-h-[1.2em]">
-                {settings?.collectionHeading || 'Our Collection'}
+                <EditableText field="collectionHeading" label="collection heading" value={settings.collectionHeading} />
               </h1>
               <p className="text-foreground/70 font-light max-w-xl min-h-[1.5em]">
-                {settings?.collectionDescription || 'Explore our bespoke architectural window treatments, custom-measured for your space.'}
+                <EditableText field="collectionDescription" label="collection introduction" value={settings.collectionDescription} multiline />
               </p>
             </div>
 

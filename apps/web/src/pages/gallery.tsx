@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Maximize2, Play, X } from 'lucide-react';
 import { getGallery, type GalleryItem, type GalleryMedia } from '@/lib/gallery-api';
 import { useSiteSettings } from '@/hooks/use-site-settings';
+import { EditableText } from '@/components/inline-editor';
+import { InlineRecordEditor } from '@/components/inline-record-editor';
 
 type SelectedMedia = { item: GalleryItem; index: number };
 
@@ -26,8 +28,8 @@ export default function Gallery() {
     <div className="container mx-auto px-4 md:px-6 py-12 md:py-20">
       <div className="mb-12 md:mb-16 border-b border-border pb-8">
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-accent mb-3">Recent projects</p>
-        <h1 className="text-4xl md:text-6xl font-serif mb-4">{settings.galleryHeading}</h1>
-        <p className="text-foreground/70 font-light max-w-xl">{settings.galleryDescription}</p>
+        <h1 className="text-4xl md:text-6xl font-serif mb-4"><EditableText field="galleryHeading" label="gallery heading" value={settings.galleryHeading} /></h1>
+        <p className="text-foreground/70 font-light max-w-xl"><EditableText field="galleryDescription" label="gallery introduction" value={settings.galleryDescription} multiline /></p>
       </div>
 
       {isLoading ? (
@@ -60,6 +62,7 @@ function GalleryCard({ item, onOpen }: { item: GalleryItem; onOpen: (index: numb
       </>}
       {media.type === 'video' && <span className="absolute left-3 bottom-3 w-9 h-9 bg-white/90 flex items-center justify-center"><Play className="w-4 h-4 fill-current" /></span>}
       <span className="absolute right-4 top-4 w-9 h-9 bg-white/90 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Maximize2 className="w-4 h-4" /></span>
+      <span className="absolute bottom-3 left-3 z-10"><InlineRecordEditor label="gallery caption" endpoint={`/api/gallery/${item.id}`} fields={[{ key: 'description', label: 'Description', value: item.description, multiline: true, allowEmpty: true }]} /></span>
     </div>
   );
 }

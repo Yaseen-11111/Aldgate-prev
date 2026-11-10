@@ -1,6 +1,6 @@
 # Pure Shade Blinds
 
-A premium made-to-measure blinds & shutters website built on the Hillarys service model: no prices are ever shown, customers build a shortlist and book a free in-home measure-and-quote appointment.
+A made-to-measure blinds and shutters website where customers build a shortlist and book a free in-home measure-and-quote appointment.
 
 ## Tech Stack
 
@@ -15,6 +15,14 @@ A premium made-to-measure blinds & shutters website built on the Hillarys servic
 
 ## Quick Start
 
+### Local mirror preview
+
+Run `pnpm --filter @workspace/web dev:local`, then open `http://127.0.0.1:5173/admin`. Sign in with the local-only username `admin` and password `7291` (or set `LOCAL_ADMIN_PASSWORD` before starting). The preview listens on loopback and never connects to the production database for writes.
+
+In the preview admin panel, choose **Refresh live public content** to copy products, gallery, and site settings. To copy private consultations, sign in to the live admin site, open **Consultations**, download `consultations.csv`, and import it in the local preview. The export includes private customer details and notes, so keep the file on your own computer. Local changes are stored in ignored `.local/preview-data.json`; refreshing or importing replaces the respective local copy. These actions are manual and do not poll Cloudflare.
+
+For on-page editing, sign in at the admin hostname (or the local preview), choose **Open website to edit on the page**, then select **Edit this page**. Pencil buttons edit headings, page copy, product text, and gallery captions in place. Save updates the same records used by the existing admin editors. Product photos, gallery media, and the remaining settings stay available in the admin portal.
+
 ### Prerequisites
 
 - **Node.js:** v20 or higher
@@ -28,7 +36,7 @@ pnpm install
 
 ### 2. Configure Environment
 
-Copy `.env.example` to `.env`. The included local `.env` is already configured with the requested admin password and is ignored by Git.
+Copy `.env.example` to `.env` for the Worker development environment. The local mirror command above uses its own loopback-only sign-in.
 
 ```bash
 cp .env.example .env

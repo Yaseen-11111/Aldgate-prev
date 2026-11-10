@@ -81,6 +81,16 @@ type TurnstileWidgetProps = {
 
 /** Explicit rendering is required because checkout is mounted dynamically by the SPA. */
 export function TurnstileWidget({ onTokenChange, resetSignal }: TurnstileWidgetProps) {
+  if (import.meta.env.DEV && import.meta.env.MODE === 'preview-local') return <LocalPreviewCheck onTokenChange={onTokenChange} />;
+  return <RealTurnstileWidget onTokenChange={onTokenChange} resetSignal={resetSignal} />;
+}
+
+function LocalPreviewCheck({ onTokenChange }: { onTokenChange: (token: string) => void }) {
+  useEffect(() => { onTokenChange('local-preview'); }, []);
+  return <p className="text-sm text-muted-foreground">Security check is disabled in this local-only preview.</p>;
+}
+
+function RealTurnstileWidget({ onTokenChange, resetSignal }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onTokenChangeRef = useRef(onTokenChange);

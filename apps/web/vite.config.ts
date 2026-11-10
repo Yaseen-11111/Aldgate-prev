@@ -2,6 +2,7 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, loadEnv } from 'vite';
+import { localPreviewPlugin } from './local-preview';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(import.meta.dirname, '..', '..'), '');
@@ -15,7 +16,7 @@ export default defineConfig(({ mode }) => {
     // The app is served from the local development server root. Keeping this
     // fixed prevents asset URLs from being prefixed by stale deployment config.
     base: '/',
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), ...(mode === 'preview-local' ? [localPreviewPlugin()] : [])],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, 'src'),
@@ -38,7 +39,7 @@ export default defineConfig(({ mode }) => {
       port,
       strictPort: true,
       host: 'localhost',
-      proxy: {
+      proxy: mode === 'preview-local' ? undefined : {
         '/api': {
           target: 'http://localhost:8787',
           changeOrigin: true,
