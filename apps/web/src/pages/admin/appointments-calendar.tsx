@@ -36,7 +36,7 @@ export function AppointmentsCalendar() {
   const updateRequest = useUpdateQuoteRequest();
   const { toast } = useToast();
   const activeRequests = requests.filter(
-    (request) => request.status !== "completed",
+    (request) => request.status !== "completed" && request.status !== "cancelled",
   );
   useEffect(() => {
     if (!selected || maximized) return;

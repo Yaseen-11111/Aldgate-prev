@@ -50,7 +50,7 @@ export function QuoteRequestsList() {
       phone: request.phone,
       email: request.email,
       postcode: request.postcode,
-      preferredDate: request.preferredDate,
+      preferredDate: request.preferredDate.slice(0, 10),
       preferredTimeWindow: request.preferredTimeWindow,
       status: request.status,
       adminNotes: request.adminNotes,
@@ -66,6 +66,9 @@ export function QuoteRequestsList() {
         toast({ title: 'Consultation request updated' });
         setEditingId(null);
         invalidateRequests();
+      },
+      onError: error => {
+        toast({ title: 'Could not update consultation', description: error.message, variant: 'destructive' });
       },
     });
   };

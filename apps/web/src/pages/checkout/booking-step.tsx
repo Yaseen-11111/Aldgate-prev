@@ -171,7 +171,11 @@ export function BookingStep({ form, isSubmitting }: BookingStepProps) {
         />
       </div>
 
-      <div className="flex justify-between items-center pt-6">
+      <p className="pt-4 text-sm text-muted-foreground">
+        We use your details to respond to your consultation request. Read our{' '}
+        <a href="/privacy#privacy-notice" className="underline underline-offset-4" target="_blank" rel="noopener noreferrer">privacy notice (opens in a new tab)</a>.
+      </p>
+      <div className="flex flex-wrap justify-between items-center gap-4 pt-6">
         <button
           type="button"
           onClick={() => {
@@ -190,7 +194,7 @@ export function BookingStep({ form, isSubmitting }: BookingStepProps) {
           className="h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors tracking-wide font-medium flex items-center gap-3 disabled:opacity-70"
         >
           {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isSubmitting ? 'Confirming Appointment…' : turnstileToken ? 'Confirm Appointment' : 'Complete Security Check'}
+          {isSubmitting ? 'Sending request…' : turnstileToken ? 'Request a consultation' : 'Complete Security Check'}
         </button>
       </div>
     </div>

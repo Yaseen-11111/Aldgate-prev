@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuoteStore } from '@/store';
-import { useCreateQuoteRequest } from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCreateQuoteRequest, type QuoteRequest } from '@workspace/api-client-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
@@ -12,7 +13,8 @@ import { Confirmation } from './confirmation';
 export default function Checkout() {
   const { items, clear } = useQuoteStore();
   const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [receivedRequest, setReceivedRequest] = useState<QuoteRequest | null>(null);
+  const queryClient = useQueryClient();
   const createRequest = useCreateQuoteRequest();
 
   const form = useForm<CheckoutFormValues>({
@@ -35,17 +37,19 @@ export default function Checkout() {
         customerMessage: data.customerMessage || undefined,
       },
     }, {
-      onSuccess: () => {
+      onSuccess: (request) => {
         clear();
-        setIsConfirmed(true);
+        setReceivedRequest(request);
+        window.scrollTo(0, 0);
       },
       onError: (error) => {
-        setSubmissionError(error instanceof Error ? error.message : 'Unable to confirm your appointment. Please try again.');
+        setSubmissionError(error instanceof Error ? error.message : 'Unable to send your request. Please try again.');
+        void queryClient.invalidateQueries({ queryKey: ['appointment-availability', data.preferredDate] });
       },
     });
   };
 
-  if (isConfirmed) return <Confirmation />;
+  if (receivedRequest) return <Confirmation request={receivedRequest} />;
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16 max-w-4xl min-h-[80vh]">
@@ -53,7 +57,7 @@ export default function Checkout() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <BookingStep form={form} isSubmitting={createRequest.isPending} />
-          {submissionError && <p className="text-sm text-destructive text-right">{submissionError}</p>}
+          {submissionError && <p role="alert" className="text-sm text-destructive">{submissionError}</p>}
         </form>
       </Form>
     </div>

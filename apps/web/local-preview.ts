@@ -7,6 +7,14 @@ import type { Plugin } from 'vite';
 type RecordData = Record<string, any>;
 type Preview = { products: RecordData[]; gallery: RecordData[]; requests: RecordData[]; settings: RecordData; audit: RecordData[]; refreshedAt: string | null; importedAt: string | null };
 const storePath = resolve(import.meta.dirname, '../../.local/preview-data.json');
+const isActiveRequest = (request: RecordData) => !['cancelled', 'completed'].includes(request.status);
+function slotConflict(requests: RecordData[], candidate: RecordData) {
+  return isActiveRequest(candidate) && requests.some(request => request.id !== candidate.id
+    && isActiveRequest(request)
+    && request.preferredDate?.slice(0, 10) === candidate.preferredDate?.slice(0, 10)
+    && request.preferredTimeWindow === candidate.preferredTimeWindow);
+}
+
 const initial = (): Preview => ({ products: [], gallery: [], requests: [], settings: {}, audit: [], refreshedAt: null, importedAt: null });
 const sessions = new Set<string>();
 const password = process.env.LOCAL_ADMIN_PASSWORD || '7291';
@@ -62,7 +70,16 @@ export function localPreviewPlugin(): Plugin {
         if (path === '/api/gallery' && method === 'GET') return respond(res, 200, data.gallery);
         if (path.startsWith('/api/gallery-media/') && method === 'GET') { const response = await fetch(`https://pureshadeblinds.co.uk${path}`); if (!response.ok) return respond(res, response.status, { error: 'Live gallery media unavailable' }); res.writeHead(200, { 'content-type': response.headers.get('content-type') || 'application/octet-stream' }); return res.end(Buffer.from(await response.arrayBuffer())); }
         if (path === '/api/appointment-availability' && method === 'GET') { const date = new URL(req.url || '/', 'http://127.0.0.1').searchParams.get('date'); return respond(res, 200, { date, unavailableTimeWindows: data.requests.filter(r => r.preferredDate?.slice(0, 10) === date && !['cancelled', 'completed'].includes(r.status)).map(r => r.preferredTimeWindow) }); }
-        if (path === '/api/quote-requests' && method === 'POST') { const body = await input(req); const entry = { ...body, id: Date.now(), status: 'pending', adminNotes: '', customerMessage: body.customerMessage || '', createdAt: new Date().toISOString(), widthCm: null, dropCm: null }; data.requests.unshift(entry); save(data); return respond(res, 201, entry); }
+        if (path === '/api/quote-requests' && method === 'POST') {
+          const body = await input(req);
+          const current = load();
+          const id = current.requests.reduce((nextId, request) => Math.max(nextId, request.id + 1), Date.now());
+          const entry = { ...body, id, status: 'pending', adminNotes: '', customerMessage: body.customerMessage || '', createdAt: new Date().toISOString(), widthCm: null, dropCm: null };
+          if (slotConflict(current.requests, entry)) return respond(res, 409, { error: 'That appointment slot is already taken. Please choose another time.' });
+          current.requests.unshift(entry);
+          save(current);
+          return respond(res, 201, entry);
+        }
         if (!authorized) return respond(res, 401, { error: 'Local admin sign-in required' });
         if (path === '/api/admin/me') return respond(res, 200, { email: 'admin (local preview)' });
         if (path === '/api/local/status') return respond(res, 200, { refreshedAt: data.refreshedAt, importedAt: data.importedAt, products: data.products.length, gallery: data.gallery.length, requests: data.requests.length });
@@ -80,6 +97,22 @@ export function localPreviewPlugin(): Plugin {
         if (path === '/api/admin/site-settings' && method === 'PATCH') { data.settings = { ...data.settings, ...await input(req) }; save(data); return respond(res, 200, data.settings); }
         const collection = path.match(/^\/api\/(products|quote-requests|gallery)\/(\d+)$/); const item = collection && (collection[1] === 'quote-requests' ? data.requests : collection[1] === 'products' ? data.products : data.gallery); const index = item?.findIndex(x => x.id === Number(collection?.[2])) ?? -1;
         if (collection && index >= 0 && method === 'GET') return respond(res, 200, item![index]);
+        if (collection?.[1] === 'quote-requests' && method === 'PATCH') {
+          const updates = await input(req);
+          const current = load();
+          const requestIndex = current.requests.findIndex(request => request.id === Number(collection[2]));
+          if (requestIndex < 0) return respond(res, 404, { error: 'Consultation not found' });
+          const original = current.requests[requestIndex];
+          const updated = { ...original, ...updates, id: original.id };
+          const changedSlot = original.preferredDate?.slice(0, 10) !== updated.preferredDate?.slice(0, 10)
+            || original.preferredTimeWindow !== updated.preferredTimeWindow || !isActiveRequest(original);
+          if (changedSlot && slotConflict(current.requests, updated)) {
+            return respond(res, 409, { error: 'That appointment slot is already taken. Please choose another time.' });
+          }
+          current.requests[requestIndex] = updated;
+          save(current);
+          return respond(res, 200, updated);
+        }
         if (collection && index >= 0 && method === 'PATCH') { item![index] = { ...item![index], ...await input(req) }; save(data); return respond(res, 200, item![index]); }
         if (collection && index >= 0 && method === 'DELETE') { item!.splice(index, 1); save(data); res.writeHead(204); return res.end(); }
         if (path === '/api/admin/gallery-media' && method === 'POST') return respond(res, 200, await input(req));

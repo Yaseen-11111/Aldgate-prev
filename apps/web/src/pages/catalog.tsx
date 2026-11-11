@@ -13,7 +13,7 @@ export default function Catalog() {
   const searchParams = new URLSearchParams(searchString);
   const categoryParam = (searchParams.get('category') ?? undefined) as ProductCategory | undefined;
 
-  const { data: products, isLoading } = useListProducts(
+  const { data: products, isLoading, isError, refetch } = useListProducts(
       categoryParam ? { category: categoryParam } : undefined,
   );
   const { items, addItem } = useQuoteStore();
@@ -47,6 +47,11 @@ export default function Catalog() {
           {/* Content Area with fixed grid layout */}
           {isLoading ? (
               <CatalogGridSkeleton />
+          ) : isError && !products ? (
+              <div role="alert" className="border border-border p-8 text-center">
+                <p>We couldn’t load the collection.</p>
+                <button type="button" onClick={() => void refetch()} className="mt-4 underline underline-offset-4">Try again</button>
+              </div>
           ) : products?.length === 0 ? (
               <EmptyCatalog />
           ) : (

@@ -13,6 +13,7 @@ const fields: Array<{ key: keyof SiteSettings; label: string; multiline?: boolea
   { key: 'categoryVenetianLabel', label: 'Venetian Blinds card title' },
   { key: 'categoryRomanLabel', label: 'Roman Blinds card title' },
   { key: 'categoryShutterLabel', label: 'Plantation Shutters card title' },
+  { key: 'serviceArea', label: 'Homepage service area' },
   { key: 'heroTitle', label: 'Homepage hero heading', multiline: true },
   { key: 'heroDescription', label: 'Homepage hero text', multiline: true },
   { key: 'heroPrimaryLabel', label: 'Homepage collection button label' },

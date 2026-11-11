@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useScroll, useTransform, useSpring, useMotionValueEvent } from 'framer-motion';
+import { useScroll, useTransform, useSpring, useMotionValueEvent, useReducedMotion } from 'framer-motion';
 import { STEPS } from './steps-data';
 import { ProcessHero } from './hero';
 import { ScrollSequence } from './scroll-sequence';
@@ -7,7 +7,7 @@ import { ProcessDetailGrid } from './detail-grid';
 import { ProcessCta } from './cta';
 
 /** "Our Process" page: hero, scroll-driven blind-reveal walkthrough, detail recap, and CTA. */
-export default function Process() {
+function AnimatedProcess() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -34,11 +34,23 @@ export default function Process() {
     setActiveStep(stepFloat);
   });
 
+  return <ScrollSequence scrollRef={scrollRef} activeStep={activeStep} openProgress={openProgress} />;
+}
+
+export default function Process() {
+  const reduceMotion = useReducedMotion();
   return (
     <div>
       <ProcessHero />
-      <ScrollSequence scrollRef={scrollRef} activeStep={activeStep} openProgress={openProgress} />
-      <ProcessDetailGrid />
+      {!reduceMotion && <>
+        <div className="mb-8 text-center">
+          <a href="#process-steps" className="text-sm font-medium underline underline-offset-4">Skip to the steps</a>
+        </div>
+        <AnimatedProcess />
+      </>}
+      <section id="process-steps" tabIndex={-1} className="scroll-mt-24" aria-label="Process steps">
+        <ProcessDetailGrid />
+      </section>
       <ProcessCta />
     </div>
   );

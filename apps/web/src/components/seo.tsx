@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
 const siteUrl = 'https://pureshadeblinds.co.uk';
 
@@ -14,6 +15,7 @@ const pageMetadata: Array<{ matches: (path: string) => boolean; title: string; d
 
 export function Seo() {
   const [path] = useLocation();
+  const { data: settings } = useSiteSettings();
   const metadata = pageMetadata.find((page) => page.matches(path)) ?? pageMetadata[0];
   const canonical = `${siteUrl}${path === '/' ? '/' : path}`;
 
@@ -30,7 +32,7 @@ export function Seo() {
     name: 'Pure Shade Blinds',
     url: siteUrl,
     description: 'Made-to-measure blinds and shutters with home consultations.',
-    areaServed: 'United Kingdom',
+    areaServed: settings.serviceArea,
   };
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
 }

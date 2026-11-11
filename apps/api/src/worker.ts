@@ -102,6 +102,7 @@ type AuditEventRow = {
 };
 
 type SiteSettings = {
+  serviceArea: string;
   categoriesHeading: string;
   categoryRollerLabel: string;
   categoryRollerImage: string;
@@ -155,6 +156,7 @@ type SiteSettings = {
 };
 
 const defaultSiteSettings: SiteSettings = {
+  serviceArea: "Home consultations in GU15, GU47, GU14, GU1, GU11, GU12 and GU9.",
   categoriesHeading: "Categories",
   categoryRollerLabel: "Roller Blinds",
   categoryRollerImage: "",
@@ -911,6 +913,10 @@ export default {
       for (const [name, value] of Object.entries(securityHeaders)) headers.set(name, value);
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
     } catch (exception) {
+      if (exception instanceof Error && (exception.message.includes("consultation_slot_conflict")
+        || String(exception.cause).includes("consultation_slot_conflict"))) {
+        return error("That appointment slot is already taken. Please choose another time.", 409);
+      }
       console.error(exception);
       return error("Internal server error", 500);
     }

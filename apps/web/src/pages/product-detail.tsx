@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useGetProduct } from '@workspace/api-client-react';
 import { useParams, Link } from 'wouter';
 import { useQuoteStore } from '@/store';
@@ -17,6 +18,14 @@ export default function ProductDetail() {
 
   const { items, addItem } = useQuoteStore();
   const isInQuote = product ? items.some((item) => item.productId === product.id) : false;
+
+  useEffect(() => {
+    if (!product) return;
+    document.title = `${product.name} | Pure Shade Blinds`;
+    if (product.description) {
+      document.querySelector('meta[name="description"]')?.setAttribute('content', product.description);
+    }
+  }, [product]);
 
   if (isLoading) {
     return <ProductDetailSkeleton />;

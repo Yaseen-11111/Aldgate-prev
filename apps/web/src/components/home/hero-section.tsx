@@ -51,6 +51,9 @@ export function HeroSection() {
               {settings.heroBookingLabel}
             </Link><InlineEditButton field="heroBookingLabel" label="booking button" value={settings.heroBookingLabel} /></div>
           </div>
+          <p className="mt-5 text-sm text-foreground/80">
+            <EditableText field="serviceArea" label="service area" value={settings.serviceArea} />
+          </p>
         </div>
       </div>
     </section>
