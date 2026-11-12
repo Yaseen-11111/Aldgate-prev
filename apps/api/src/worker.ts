@@ -156,7 +156,7 @@ type SiteSettings = {
 };
 
 const defaultSiteSettings: SiteSettings = {
-  serviceArea: "Home consultations in GU15, GU47, GU14, GU1, GU11, GU12 and GU9.",
+  serviceArea: "Home consultations across GU1, GU2, GU3, GU4, GU7, GU8, GU9, GU10, GU11, GU12, GU14, GU15, GU16, GU17, GU18, GU19, GU20, GU21, GU22, GU23, GU24, GU25, GU26, GU46, GU47, GU51, GU52, RG12, RG40, RG41, RG42, RG45, SL5 and KT16. Nearby addresses are welcome to enquire.",
   categoriesHeading: "Categories",
   categoryRollerLabel: "Roller Blinds",
   categoryRollerImage: "",
@@ -318,6 +318,9 @@ async function getSiteSettings(env: Env): Promise<SiteSettings> {
     const row = await env.DB.prepare("SELECT value FROM site_settings WHERE key = 'public'").first<{ value: string }>();
     if (!row) return defaultSiteSettings;
     const parsed = JSON.parse(row.value) as Partial<SiteSettings>;
+    if (parsed.serviceArea === "Home consultations in GU15, GU47, GU14, GU1, GU11, GU12 and GU9.") {
+      parsed.serviceArea = defaultSiteSettings.serviceArea;
+    }
     return { ...defaultSiteSettings, ...parsed };
   } catch { return defaultSiteSettings; }
 }
