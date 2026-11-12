@@ -17,7 +17,14 @@ A made-to-measure blinds and shutters website where customers build a shortlist 
 
 ### Local mirror preview
 
-Run `pnpm --filter @workspace/web dev:local`, then open `http://127.0.0.1:5173/admin`. Sign in with the local-only username `admin` and password `7291` (or set `LOCAL_ADMIN_PASSWORD` before starting). The preview listens on loopback and never connects to the production database for writes.
+From the repository root, start the local mirror with:
+
+```bash
+pnpm install
+pnpm --filter @workspace/web dev:local
+```
+
+Open `http://127.0.0.1:5173/` for the website or `http://127.0.0.1:5173/admin` for admin. Sign in with the local-only username `admin` and password `7291` (or set `LOCAL_ADMIN_PASSWORD` before starting). This command includes the local preview API; **do not start `dev:api` for the mirror**. The preview listens on loopback and never connects to the production database for writes.
 
 In the preview admin panel, choose **Refresh live public content** to copy products, gallery, and site settings. To copy private consultations, sign in to the live admin site, open **Consultations**, download `consultations.csv`, and import it in the local preview. The export includes private customer details and notes, so keep the file on your own computer. Local changes are stored in ignored `.local/preview-data.json`; refreshing or importing replaces the respective local copy. These actions are manual and do not poll Cloudflare.
 
@@ -57,7 +64,7 @@ pnpm --filter @workspace/api-server exec wrangler secret put SESSION_SECRET
 pnpm --filter @workspace/api-server exec wrangler secret put ADMIN_PASSWORD
 ```
 
-### 4. Run the Application
+### 4. Run the Worker API and frontend locally
 
 Open two terminal sessions (e.g. in IntelliJ or VS Code):
 
@@ -68,6 +75,8 @@ pnpm dev:api
 # Terminal 2 — Web Frontend (http://localhost:5173)
 pnpm dev:web
 ```
+
+This is the separate Worker development setup. It uses a local D1 database and requires the Worker environment configured above. To apply migrations to that **local** database, run `pnpm --filter @workspace/api-server db:migrate:local`. The `db:migrate` script targets the production D1 database.
 
 - **Storefront:** [http://localhost:5173](http://localhost:5173)
 - **Admin Portal:** [http://localhost:5173/admin](http://localhost:5173/admin)
@@ -109,6 +118,8 @@ database/
 | :--- | :--- |
 | `pnpm dev:api` | Start the Cloudflare Worker locally |
 | `pnpm dev:web` | Start the Vite frontend development server |
+| `pnpm --filter @workspace/web dev:local` | Start the standalone local mirror, including its preview API |
+| `pnpm --filter @workspace/api-server db:migrate:local` | Apply D1 migrations locally |
 | `pnpm --filter @workspace/api-server db:migrate` | Apply D1 migrations to production |
 | `pnpm deploy` | Build and deploy the Worker plus static site |
 | `pnpm typecheck` | Run full TypeScript type checking |
